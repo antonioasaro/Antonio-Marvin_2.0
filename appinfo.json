@@ -1,0 +1,96 @@
+{
+    "versionLabel": "1.0",
+    "uuid": "29de155f-0cfd-42a0-8d11-f7331ecc04c1",
+    "appKeys": {},
+    "longName": "Antonio Marvin",
+    "versionCode": 1,
+    "shortName": "Antonio Marvin",
+    "companyName": "antonio_asaro",
+    "watchapp": {
+        "watchface": true
+    },
+    "resources": {
+        "media": [
+            {
+                "type": "png",
+                "name": "IMAGE_EXPLODE",
+                "file": "images/Explode.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_MARVIN04",
+                "file": "images/marvin04.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_MARVIN01",
+                "file": "images/marvin01.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_MARVIN02",
+                "file": "images/marvin02.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_MARVIN03",
+                "file": "images/marvin03.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_MENU_ICON",
+                "file": "images/marvin_icon.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_BOLT",
+                "file": "images/bolt.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_PLANET",
+                "file": "images/Planet.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_FLAG",
+                "file": "images/Flag.png"
+            },
+            {
+                "type": "font",
+                "name": "FONT_HANDSEAN_18",
+                "file": "fonts/handsean.ttf"
+            },
+            {
+                "type": "font",
+                "name": "FONT_HANDSEAN_16",
+                "file": "fonts/handsean.ttf"
+            },
+            {
+                "type": "font",
+                "name": "FONT_HANDSEAN_14",
+                "file": "fonts/handsean.ttf"
+            },
+            {
+                "type": "font",
+                "name": "FONT_HANDSEAN_12",
+                "file": "fonts/handsean.ttf"
+            },
+            {
+                "type": "font",
+                "name": "FONT_HANDSEAN_10",
+                "file": "fonts/handsean.ttf"
+            },
+            {
+                "type": "font",
+                "name": "FONT_HANDSEAN_8",
+                "file": "fonts/handsean.ttf"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_EARTH",
+                "file": "images/Earth.png"
+            }
+        ]
+    }
+}
