@@ -14,6 +14,8 @@
 ////	     );
 
 Window *window;
+Layer *window_layer;
+GRect window_bounds;
 static bool is_animating;
 static ResHandle res_h[6];
 static GFont fonts[6];   
@@ -376,8 +378,6 @@ static void skip_splash()
 	setup_time();
 	setup_date();
 
-////	struct tm *current;
-////	localtime(time(NULL)); // (current);
 	set_time(localtime(time(NULL)));
 	set_date(localtime(time(NULL)));
 	setup_me(IMAGE_POS_NORMAL);
@@ -387,10 +387,13 @@ static void skip_splash()
 
 static void handle_timer(void *data)
 {
+
 	if(is_animating == false) return;
 
+	int cookie;
+	cookie = (int *) data;
+
 	clear_me();
-	int cookie = *data;
 	setup_me(cookie);
 
 	static uint32_t new_position;
@@ -429,81 +432,71 @@ static void handle_timer(void *data)
 	}
 	else if (cookie == (uint32_t) SHRINK_FONT01) 
 	{
- 		text_layer_set_font(&time_text, fonts[4]);
-		text_layer_set_font(&date_text, fonts[4]);
- 	    //// text_layer_set_text(&date_text, "SH01");	//// debugging
-		app_timer_send_event(50, &handle_timer, (void *) SHRINK_FONT02);
+ 		text_layer_set_font(time_text, fonts[4]);
+		text_layer_set_font(date_text, fonts[4]);
+		app_timer_register(50, handle_timer, (void *) SHRINK_FONT02);
 		return;
 	}
 	else if (cookie == (uint32_t) SHRINK_FONT02) 
 	{
- 		text_layer_set_font(&time_text, fonts[3]);
-		text_layer_set_font(&date_text, fonts[3]);
- 	    //// text_layer_set_text(&date_text, "SH02");
- 	    app_timer_send_event(ctx, 50, SHRINK_FONT03);
+ 		text_layer_set_font(time_text, fonts[3]);
+		text_layer_set_font(date_text, fonts[3]);
+ 	    app_timer_register(50, handle_timer, (void *) SHRINK_FONT03);
 		return;
 	}
 	else if (cookie == (uint32_t) SHRINK_FONT03) 
 	{
- 		text_layer_set_font(&time_text, fonts[2]);
-		text_layer_set_font(&date_text, fonts[2]);
- 	    //// text_layer_set_text(&date_text, "SH03");
- 	    app_timer_send_event(ctx, 50, SHRINK_FONT04);
+ 		text_layer_set_font(time_text, fonts[2]);
+		text_layer_set_font(date_text, fonts[2]);
+ 	    app_timer_register(50, handle_timer, (void *) SHRINK_FONT04);
 		return;
 	}
 	else if (cookie == (uint32_t) SHRINK_FONT04) 
 	{
- 		text_layer_set_font(&time_text, fonts[1]);
-		text_layer_set_font(&date_text, fonts[1]);
- 	    //// text_layer_set_text(&date_text, "SH04");
- 	    app_timer_send_event(ctx, 50, SHRINK_FONT05);
+ 		text_layer_set_font(time_text, fonts[1]);
+		text_layer_set_font(date_text, fonts[1]);
+ 	    app_timer_register(50, handle_timer, (void *) SHRINK_FONT05);
 		return;
 	}
 	else if (cookie == (uint32_t) SHRINK_FONT05) 
 	{
- 		text_layer_set_font(&time_text, fonts[0]);
-		text_layer_set_font(&date_text, fonts[0]);
- 	    //// text_layer_set_text(&date_text, "SH05");
- 	    app_timer_send_event(ctx, 1000, EXPAND_FONT01);
+ 		text_layer_set_font(time_text, fonts[0]);
+		text_layer_set_font(date_text, fonts[0]);
+ 	    app_timer_register(1000, handle_timer, (void *) EXPAND_FONT01);
 		return;
 	}
 	else if (cookie == (uint32_t) EXPAND_FONT01) 
 	{
- 		text_layer_set_font(&time_text, fonts[1]);
-		text_layer_set_font(&date_text, fonts[1]);
- 	    //// text_layer_set_text(&date_text, "EX01");
- 	    app_timer_send_event(ctx, 50, EXPAND_FONT02);
+ 		text_layer_set_font(time_text, fonts[1]);
+		text_layer_set_font(date_text, fonts[1]);
+ 	    app_timer_register(50, handle_timer, (void *) EXPAND_FONT02);
 		return;
 	}
 	else if (cookie == (uint32_t) EXPAND_FONT02) 
 	{
- 		text_layer_set_font(&time_text, fonts[2]);
-		text_layer_set_font(&date_text, fonts[2]);
- 	    //// text_layer_set_text(&date_text, "EX02");
- 	    app_timer_send_event(ctx, 50, EXPAND_FONT03);
+ 		text_layer_set_font(time_text, fonts[2]);
+		text_layer_set_font(date_text, fonts[2]);
+ 	    app_timer_register(50, handle_timer, (void *) EXPAND_FONT03);
 		return;
 	}
 	else if (cookie == (uint32_t) EXPAND_FONT03) 
 	{
- 		text_layer_set_font(&time_text, fonts[3]);
-		text_layer_set_font(&date_text, fonts[3]);
- 	    //// text_layer_set_text(&date_text, "EX03");
- 	    app_timer_send_event(ctx, 50, EXPAND_FONT04);
+ 		text_layer_set_font(time_text, fonts[3]);
+		text_layer_set_font(date_text, fonts[3]);
+ 	    app_timer_register(50, handle_timer, (void *) EXPAND_FONT04);
 		return;
 	}
 	else if (cookie == (uint32_t) EXPAND_FONT04) 
 	{
- 		text_layer_set_font(&time_text, fonts[4]);
-		text_layer_set_font(&date_text, fonts[4]);
- 	    //// text_layer_set_text(&date_text, "EX04");
- 	    app_timer_send_event(ctx, 50, RESTORE_FONT);
+ 		text_layer_set_font(time_text, fonts[4]);
+		text_layer_set_font(date_text, fonts[4]);
+ 	    app_timer_register(50, handle_timer, (void *) RESTORE_FONT);
 		return;
 	}
 	else if (cookie == (uint32_t) RESTORE_FONT) 
 	{
- 		text_layer_set_font(&time_text, fonts[5]);
-		text_layer_set_font(&date_text, fonts[5]);
- 	    //// text_layer_set_text(&date_text, "REST");
+ 		text_layer_set_font(time_text, fonts[5]);
+		text_layer_set_font(date_text, fonts[5]);
 		is_animating = false;
 		return;
 	}
@@ -514,7 +507,7 @@ static void handle_timer(void *data)
 		return;
 	}
 
-	app_timer_send_event(ctx, animation[cookie].show_interval, new_position);
+	app_timer_register(animation[cookie].show_interval, &handle_timer, (void *) new_position);
 }
 
 void set_time(struct tm *t)
@@ -527,24 +520,20 @@ void set_time(struct tm *t)
 	if (hourText[0] == '0') { hourText[0] = ' '; }
 	if (t->tm_hour < 12) strcat(hourText, "am"); else strcat(hourText, "pm");
 
-	text_layer_set_text(&time_text, hourText);
+	text_layer_set_text(time_text, hourText);
 }
 
 void set_date(struct tm *t)
 {
 	static char dateText[] = "XXX 00/00"; 
     strftime(dateText, sizeof(dateText), "%a %m/%d", t);
-	text_layer_set_text(&date_text, dateText);
+	text_layer_set_text(date_text, dateText);
 }
 
 static void handle_second_tick(struct tm *t, TimeUnits units_changed)
-// void handle_second_tick(PebbleTickEvent *t)
 {
-//	(void)ctx;
-
 	int seconds = t->tm_sec;
 	int minutes = t->tm_min;
-////	int hours = t->tick_time->tm_hour;
 
 	if(seconds == 0)
 	{
@@ -573,28 +562,20 @@ static void handle_second_tick(struct tm *t, TimeUnits units_changed)
 void handle_init(void)
 {
 	window = window_create();
+	window_layer = window_get_root_layer(window);
+	window_bounds = layer_get_frame(window_layer);
+	window_stack_push(window, true /* Animated */);
 	tick_timer_service_subscribe(SECOND_UNIT, handle_second_tick);
 	
-//	window_init(window, "Main");
-//	#ifdef DEBUG
-//		window_set_fullscreen(&window, true);
-//		window_set_click_config_provider(&window, (ClickConfigProvider) config_provider);
-//	#endif
-
-//	window_stack_push(&window, true);
-
-//	resource_init_current_app(&APP_RESOURCES);
-
+	
 	srand(time(NULL));
 	is_animating = false;
-
-//	appctx = ctx;
 	skip_splash();
 }
 
 void handle_deinit(void) 
 {
-////	clear_screen();
+	clear_screen();
 }
 
 int main(void)
