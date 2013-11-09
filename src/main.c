@@ -595,12 +595,13 @@ void handle_init(void)
 	window_layer = window_get_root_layer(window);
 	window_bounds = layer_get_frame(window_layer);
 	window_stack_push(window, true /* Animated */);
-	tick_timer_service_subscribe(SECOND_UNIT, handle_second_tick);
+////	tick_timer_service_subscribe(SECOND_UNIT, handle_second_tick);
 	
 	srand(time(NULL));
 
 	is_animating = false;
-	setup_gbitmap();
+////	setup_gbitmap();
+/*
 	setup_time();
 	setup_date();
 	time_t now = time(NULL);
@@ -609,6 +610,7 @@ void handle_init(void)
 	update_date(current_time);
 	
 //	skip_splash();
+*/
 }
 
 void handle_deinit(void) 

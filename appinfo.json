@@ -7,7 +7,7 @@
     "shortName": "Antonio Marvin",
     "companyName": "antonio_asaro",
     "watchapp": {
-        "watchface": true
+        "watchface": false
     },
     "resources": {
         "media": [
