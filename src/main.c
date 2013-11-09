@@ -96,31 +96,32 @@ animation_details animation[IMAGE_COUNT] =
 };
 
 
+void setup_gbitmap();
+void setup_time();
+void setup_date();
 void setup_frames();
 void setup_animation();
 void setup_screen();
 void setup_me(int current_position);
 void setup_bolt(bool send, bool explode);
-void setup_time();
-void setup_date();
 void setup_background();
+void update_time(struct tm *t);
+void update_date(struct tm *t);
 void animate_bolt(bool send);
 void animate_explode();
 void animate_text();
-void set_time(struct tm *t);
-void set_date(struct tm *t);
 void send_animation_stopped(Animation *animation, void *data);
 static void handle_timer(void *data);
 
 
-void clear_background()
+void clear_time()
 {
-//	layer_remove_from_parent(flag);
-//	layer_remove_from_parent(planet->layer);
-//	layer_remove_from_parent(earth->layer);
-	bitmap_layer_destroy(flag);
-	bitmap_layer_destroy(planet);
-	bitmap_layer_destroy(earth);
+	text_layer_destroy(time_text); //	layer_remove_from_parent((Layer *) time_text);
+}
+
+void clear_date()
+{
+	text_layer_destroy(date_text); //	layer_remove_from_parent((Layer *) date_text);
 }
 
 void clear_me()
@@ -135,14 +136,14 @@ void clear_bolt()
 	bitmap_layer_destroy(bolt);
 }
 
-void clear_time()
+void clear_background()
 {
-	text_layer_destroy(time_text); //	layer_remove_from_parent((Layer *) time_text);
-}
-
-void clear_date()
-{
-	text_layer_destroy(date_text); //	layer_remove_from_parent((Layer *) date_text);
+//	layer_remove_from_parent(flag);
+//	layer_remove_from_parent(planet->layer);
+//	layer_remove_from_parent(earth->layer);
+	bitmap_layer_destroy(flag);
+	bitmap_layer_destroy(planet);
+	bitmap_layer_destroy(earth);
 }
 
 void clear_screen()
@@ -154,6 +155,18 @@ void clear_screen()
 	clear_background();
 }
 
+void setup_gbitmap()
+{
+	flag_image     = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FLAG);
+	planet_image   = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PLANET);
+	earth_image    = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_EARTH);
+	marvin01_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN01);
+	marvin02_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN02);
+	marvin03_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN03);
+	marvin04_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN04);
+	bolt_image     = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BOLT);
+	explode_image  = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_EXPLODE);
+}
 void setup_bolt(bool send, bool explode)
 {
 	if(explode) 
@@ -188,24 +201,23 @@ void setup_me(int current_position)
 
 void setup_time()
 {
-/*
-text_layer_init(&time_text, GRect((IMAGE_WIDTH / 2), TIME_FRAME_Y, TIME_FRAME_WIDTH, TIME_FRAME_HEIGHT));
-	
-	text_layer_set_font(&time_text, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_18)));
-	text_layer_set_text_alignment(&time_text, GTextAlignmentCenter);
-////	layer_insert_below_sibling((Layer *) &time_text, (Layer *) &inverter);
-*/
+  	time_text = text_layer_create(GRect((IMAGE_WIDTH / 2), TIME_FRAME_Y, TIME_FRAME_WIDTH, TIME_FRAME_HEIGHT));
+  	text_layer_set_text_color(time_text, GColorBlack);
+  	text_layer_set_background_color(time_text, GColorClear);
+  	text_layer_set_font(time_text, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_18)));
+	layer_add_child(window_get_root_layer(window), text_layer_get_layer(time_text));
+	text_layer_set_text_alignment(date_text, GTextAlignmentCenter);
 }
 
 void setup_date()
 {
-/*
-text_layer_init(&date_text, GRect((IMAGE_WIDTH / 2), TIME_FRAME_Y + TIME_FRAME_HEIGHT, TIME_FRAME_WIDTH, TIME_FRAME_HEIGHT));
-	
-	text_layer_set_font(&date_text, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_18)));
-	text_layer_set_text_alignment(&date_text, GTextAlignmentCenter);
+  	date_text = text_layer_create(GRect((IMAGE_WIDTH / 2), TIME_FRAME_Y + TIME_FRAME_HEIGHT, TIME_FRAME_WIDTH, TIME_FRAME_HEIGHT));
+  	text_layer_set_text_color(date_text, GColorBlack);
+  	text_layer_set_background_color(date_text, GColorClear);
+ 	text_layer_set_font(date_text, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_18)));
+	layer_add_child(window_get_root_layer(window), text_layer_get_layer(date_text));
+	text_layer_set_text_alignment(date_text, GTextAlignmentCenter);
 ////	layer_insert_below_sibling((Layer *) &date_text, (Layer *) &inverter);
-*/
 }
 
 void setup_background()
@@ -313,6 +325,27 @@ int total_send_delay = 0;
 */
 }
 
+void update_time(struct tm *t)
+{
+	static char hourText[] = "04:44pm"; 	//this is the longest possible text based on the font used
+	if(clock_is_24h_style())
+		strftime(hourText, sizeof(hourText), "%H:%M", t);
+	else
+		strftime(hourText, sizeof(hourText), "%I:%M", t);
+	if (hourText[0] == '0') { hourText[0] = ' '; }
+	if (t->tm_hour < 12) strcat(hourText, "am"); else strcat(hourText, "pm");
+
+	text_layer_set_text(time_text, hourText);
+}
+
+void update_date(struct tm *t)
+{
+	static char dateText[] = "XXX 00/00"; 
+    strftime(dateText, sizeof(dateText), "%a %m/%d", t);
+	text_layer_set_text(date_text, dateText);
+}
+
+					  
 void animate_send()
 {
 	if(is_animating) return;
@@ -378,7 +411,8 @@ void animate_text()
 
 static void skip_splash()
 {
-	clear_screen();
+/*
+clear_screen();
 	setup_fonts();
 ////	setup_inverter();
 	setup_frames();	
@@ -399,6 +433,7 @@ static void skip_splash()
 	setup_me(IMAGE_POS_NORMAL);
 	
 	setup_animation();
+*/
 }
 
 static void handle_timer(void *data)
@@ -525,26 +560,6 @@ static void handle_timer(void *data)
 	app_timer_register(animation[cookie].show_interval, &handle_timer, (void *) new_position);
 }
 
-void set_time(struct tm *t)
-{
-	static char hourText[] = "04:44pm"; 	//this is the longest possible text based on the font used
-	if(clock_is_24h_style())
-		strftime(hourText, sizeof(hourText), "%H:%M", t);
-	else
-		strftime(hourText, sizeof(hourText), "%I:%M", t);
-	if (hourText[0] == '0') { hourText[0] = ' '; }
-	if (t->tm_hour < 12) strcat(hourText, "am"); else strcat(hourText, "pm");
-
-	text_layer_set_text(time_text, hourText);
-}
-
-void set_date(struct tm *t)
-{
-	static char dateText[] = "XXX 00/00"; 
-    strftime(dateText, sizeof(dateText), "%a %m/%d", t);
-	text_layer_set_text(date_text, dateText);
-}
-
 static void handle_second_tick(struct tm *t, TimeUnits units_changed)
 {
 	int seconds = t->tm_sec;
@@ -552,8 +567,8 @@ static void handle_second_tick(struct tm *t, TimeUnits units_changed)
 
 	if(seconds == 0)
 	{
-		set_time(t);	
-		set_date(t);
+		update_time(t);	
+		update_date(t);
 	}
 
 	bool sender = false;
@@ -582,24 +597,23 @@ void handle_init(void)
 	window_stack_push(window, true /* Animated */);
 	tick_timer_service_subscribe(SECOND_UNIT, handle_second_tick);
 	
-	flag_image     = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FLAG);
-	planet_image   = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PLANET);
-	earth_image    = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_EARTH);
-	marvin01_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN01);
-	marvin02_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN02);
-	marvin03_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN03);
-	marvin04_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN04);
-	bolt_image     = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BOLT);
-	explode_image  = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_EXPLODE);
-	
 	srand(time(NULL));
+
 	is_animating = false;
-	skip_splash();
+	setup_gbitmap();
+	setup_time();
+	setup_date();
+	time_t now = time(NULL);
+	struct tm *current_time = localtime(&now);
+	update_time(current_time);
+	update_date(current_time);
+	
+//	skip_splash();
 }
 
 void handle_deinit(void) 
 {
-	clear_screen();
+////	clear_screen();
 }
 
 int main(void)
