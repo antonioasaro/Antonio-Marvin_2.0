@@ -406,9 +406,8 @@ static void handle_timer(void *data)
 
 	if(is_animating == false) return;
 
-	int cookie = IMAGE_POS_NORMAL;
-//	cookie = *data;
-
+	uint32_t *temp = data;
+	uint32_t cookie = *temp;
 	clear_me();
 	setup_me(cookie);
 
