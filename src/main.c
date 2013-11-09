@@ -63,7 +63,7 @@ static bool is_animating;
 static ResHandle res_h[6];
 static GFont fonts[6];   
 
-static BitmapLayer *me;
+static BitmapLayer *marvin;
 static BitmapLayer *bolt;
 static BitmapLayer *earth;
 static BitmapLayer *flag;
@@ -102,11 +102,12 @@ void setup_date();
 void setup_frames();
 void setup_animation();
 void setup_screen();
-void setup_me(int current_position);
+void setup_marvin();
 void setup_bolt(bool send, bool explode);
 void setup_background();
 void update_time(struct tm *t);
 void update_date(struct tm *t);
+void update_marvin(int current_position);
 void animate_bolt(bool send);
 void animate_explode();
 void animate_text();
@@ -114,33 +115,28 @@ void send_animation_stopped(Animation *animation, void *data);
 static void handle_timer(void *data);
 
 
-void clear_me()
+void clear_marvin()
 {
-//	layer_remove_from_parent((Layer *) me.layer);
-	bitmap_layer_destroy(me);
+	bitmap_layer_destroy(marvin);
 }
 
 void clear_time()
 {
-	text_layer_destroy(time_text); //	layer_remove_from_parent((Layer *) time_text);
+	text_layer_destroy(time_text);
 }
 
 void clear_date()
 {
-	text_layer_destroy(date_text); //	layer_remove_from_parent((Layer *) date_text);
+	text_layer_destroy(date_text);
 }
 
 void clear_bolt()
 {
-//	layer_remove_from_parent((Layer *) bolt.layer);
 	bitmap_layer_destroy(bolt);
 }
 
 void clear_background()
 {
-//	layer_remove_from_parent(flag);
-//	layer_remove_from_parent(planet->layer);
-//	layer_remove_from_parent(earth->layer);
 	bitmap_layer_destroy(earth);
 	bitmap_layer_destroy(flag);
 	bitmap_layer_destroy(mars);
@@ -148,7 +144,7 @@ void clear_background()
 
 void clear_screen()
 {
-	clear_me();
+	clear_marvin();
 	clear_time();
 	clear_date();
 	clear_bolt();
@@ -188,16 +184,12 @@ void setup_bolt(bool send, bool explode)
 ////	layer_insert_below_sibling((Layer *) &bolt.layer, (Layer *) &inverter);
 }
 
-void setup_me(int current_position)
+void setup_marvin()
 {
-	if(current_position >= IMAGE_COUNT) current_position = IMAGE_POS_NORMAL;
-
-/*
-	bmp_init_container(animation[current_position].image_index, &me);
-	bitmap_layer_set_compositing_mode(&me.layer, GCompOpAnd);
-	layer_set_frame((Layer *) &me.layer, GRect(-5, 56, IMAGE_WIDTH, IMAGE_HEIGHT));
-	layer_insert_below_sibling((Layer *) &me.layer, (Layer *) &planet.layer); //&inverter);
-*/
+	marvin = bitmap_layer_create(GRect(-5, 56, IMAGE_WIDTH, IMAGE_HEIGHT));
+	bitmap_layer_set_bitmap(marvin, marvin01_image);
+	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(marvin));
+	bitmap_layer_set_compositing_mode(marvin, GCompOpAnd);
 }
 
 void setup_time()
@@ -280,14 +272,6 @@ void setup_frames()
 
 }
 
-/*
-void setup_inverter()
-{
-	inverter_layer_init(&inverter, GRect(0, 0, SCREEN_WIDTH, (INVERT_COLOUR ? SCREEN_HEIGHT : 0)));
-	layer_add_child(&window.layer, &inverter.layer);
-}
-*/
-
 void setup_animation()
 {
 
@@ -341,6 +325,18 @@ void update_date(struct tm *t)
 	text_layer_set_text(date_text, dateText);
 }
 
+void update_marvin(int current_position)
+{
+////	if(current_position >= IMAGE_COUNT) current_position = IMAGE_POS_NORMAL;
+
+/*
+	bmp_init_container(animation[current_position].image_index, &me);
+	bitmap_layer_set_compositing_mode(&me.layer, GCompOpAnd);
+	layer_set_frame((Layer *) &me.layer, GRect(-5, 56, IMAGE_WIDTH, IMAGE_HEIGHT));
+	layer_insert_below_sibling((Layer *) &me.layer, (Layer *) &planet.layer); //&inverter);
+*/
+}
+
 					  
 void animate_send()
 {
@@ -367,9 +363,9 @@ void explode_animation_stopped(Animation *animation, void *data)
 
 	is_animating = false;
 
-	clear_me();
+	clear_marvin();
 	clear_bolt();
-	setup_me(IMAGE_POS_NORMAL);
+	update_marvin(IMAGE_POS_NORMAL);
 	animate_text();
 }
 
@@ -439,8 +435,7 @@ static void handle_timer(void *data)
 
 	uint32_t *temp = data;
 	uint32_t cookie = *temp;
-	clear_me();
-	setup_me(cookie);
+	update_marvin(cookie);
 
 	static uint32_t new_position;
 	if(cookie == (uint32_t) IMAGE_POS_NORMAL) 
@@ -606,6 +601,7 @@ void handle_init(void)
 
 	setup_gbitmap();
 	setup_background();
+	setup_marvin();
 /*	
 //	skip_splash();
 */
