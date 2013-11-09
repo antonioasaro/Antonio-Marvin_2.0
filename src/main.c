@@ -96,7 +96,7 @@ void animate_explode();
 void animate_text();
 static void handle_timer(void *data);
 
-//// functions
+//// clear functions
 void clear_marvin()
 {
 	bitmap_layer_destroy(marvin);
@@ -133,6 +133,7 @@ void clear_screen()
 	clear_background();
 }
 
+//// setup functions
 void setup_gbitmap()
 {
 	marvin01_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN01);
@@ -303,6 +304,7 @@ int total_send_delay = 0;
 */
 }
 
+//// update functions
 void update_time(struct tm *t)
 {
 	static char hourText[] = "04:44pm"; 	//this is the longest possible text based on the font used
@@ -329,7 +331,8 @@ void update_marvin(int current_position)
 }
 
 					  
-void animate_send()
+//// animate functions
+void animate_marvin()
 {
 	is_animating = true;
 	timer = app_timer_register(marvin_animation[IMAGE_POS_NORMAL].duration, handle_timer, (int *) IMAGE_POS_DRAW);
@@ -391,127 +394,138 @@ void animate_bolt(bool send)
 }
 
 
+//// handle functions
 static void handle_timer(void *data)
 {
+	uint32_t cookie = (uint32_t) data;
+	static uint32_t new_position;
 
 	if(is_animating == false) return;
-	uint32_t cookie = (uint32_t) data;
-	update_marvin(cookie);
-
-	static uint32_t new_position;
 	if(cookie == (uint32_t) IMAGE_POS_NORMAL) 
 	{
 		is_animating = false;
+		update_marvin(cookie);
 		new_position = IMAGE_POS_NORMAL;
+		animate_font();
 		return;
 	}
 	else if(cookie == (uint32_t) IMAGE_POS_DRAW) 
 	{
+		update_marvin(cookie);
 		new_position = cookie + 1;
+		timer = app_timer_register(marvin_animation[cookie].duration, &handle_timer, (void *) new_position);
+		return;
 	}
 	else if(cookie == (uint32_t) IMAGE_POS_POINT) 
 	{
+		update_marvin(cookie);
 		new_position = cookie + 1;
+		timer = app_timer_register(marvin_animation[cookie].duration, &handle_timer, (void *) new_position);
+		return;
 	}
 	else if(cookie == (uint32_t) IMAGE_POS_AIM) 
 	{
+		update_marvin(cookie);
 		new_position = cookie + 1;
+		timer = app_timer_register(marvin_animation[cookie].duration, &handle_timer, (void *) new_position);
+		return;
 	}
 	else if(cookie == (uint32_t) IMAGE_POS_SHOOT) 
 	{
+		update_marvin(cookie);
 		new_position = cookie + 1;
 /*
 		clear_bolt();
 		setup_bolt(true, false);
 		animate_bolt(true);
 */
+		timer = app_timer_register(marvin_animation[cookie].duration, &handle_timer, (void *) new_position);
+		return;
 	}
 	else if(cookie == (uint32_t) IMAGE_POS_LOWER) 
 	{
+		update_marvin(cookie);
 		new_position = cookie + 1;
+		timer = app_timer_register(marvin_animation[cookie].duration, &handle_timer, (void *) new_position);
+		return;
 	}
 	else if(cookie == (uint32_t) IMAGE_POS_DONE) 
 	{
+		update_marvin(cookie);
 		new_position = IMAGE_POS_NORMAL;
+		timer = app_timer_register(marvin_animation[cookie].duration, &handle_timer, (void *) new_position);
+		return;
 	}
-/*
 	else if (cookie == (uint32_t) SHRINK_FONT01) 
 	{
  		text_layer_set_font(time_text, fonts[4]);
 		text_layer_set_font(date_text, fonts[4]);
-		app_timer_register(50, handle_timer, (void *) SHRINK_FONT02);
+		timer = app_timer_register(50, handle_timer, (int *) SHRINK_FONT02);
 		return;
 	}
 	else if (cookie == (uint32_t) SHRINK_FONT02) 
 	{
  		text_layer_set_font(time_text, fonts[3]);
 		text_layer_set_font(date_text, fonts[3]);
- 	    app_timer_register(50, handle_timer, (void *) SHRINK_FONT03);
+ 	    timer = app_timer_register(50, handle_timer, (int *) SHRINK_FONT03);
 		return;
 	}
 	else if (cookie == (uint32_t) SHRINK_FONT03) 
 	{
  		text_layer_set_font(time_text, fonts[2]);
 		text_layer_set_font(date_text, fonts[2]);
- 	    app_timer_register(50, handle_timer, (void *) SHRINK_FONT04);
+ 	    timer = app_timer_register(50, handle_timer, (int *) SHRINK_FONT04);
 		return;
 	}
 	else if (cookie == (uint32_t) SHRINK_FONT04) 
 	{
  		text_layer_set_font(time_text, fonts[1]);
 		text_layer_set_font(date_text, fonts[1]);
- 	    app_timer_register(50, handle_timer, (void *) SHRINK_FONT05);
+ 	    timer = app_timer_register(50, handle_timer, (int *) SHRINK_FONT05);
 		return;
 	}
 	else if (cookie == (uint32_t) SHRINK_FONT05) 
 	{
  		text_layer_set_font(time_text, fonts[0]);
 		text_layer_set_font(date_text, fonts[0]);
- 	    app_timer_register(1000, handle_timer, (void *) EXPAND_FONT01);
+ 	    timer = app_timer_register(1000, handle_timer, (int *) EXPAND_FONT01);
 		return;
 	}
 	else if (cookie == (uint32_t) EXPAND_FONT01) 
 	{
  		text_layer_set_font(time_text, fonts[1]);
 		text_layer_set_font(date_text, fonts[1]);
- 	    app_timer_register(50, handle_timer, (void *) EXPAND_FONT02);
+ 	    app_timer_register(50, handle_timer, (int *) EXPAND_FONT02);
 		return;
 	}
 	else if (cookie == (uint32_t) EXPAND_FONT02) 
 	{
  		text_layer_set_font(time_text, fonts[2]);
 		text_layer_set_font(date_text, fonts[2]);
- 	    app_timer_register(50, handle_timer, (void *) EXPAND_FONT03);
+ 	    timer = app_timer_register(50, handle_timer, (int *) EXPAND_FONT03);
 		return;
 	}
 	else if (cookie == (uint32_t) EXPAND_FONT03) 
 	{
  		text_layer_set_font(time_text, fonts[3]);
 		text_layer_set_font(date_text, fonts[3]);
- 	    app_timer_register(50, handle_timer, (void *) EXPAND_FONT04);
+ 	    timer = app_timer_register(50, handle_timer, (int *) EXPAND_FONT04);
 		return;
 	}
 	else if (cookie == (uint32_t) EXPAND_FONT04) 
 	{
  		text_layer_set_font(time_text, fonts[4]);
 		text_layer_set_font(date_text, fonts[4]);
- 	    app_timer_register(50, handle_timer, (void *) NORMAL_FONT);
+ 	    timer = app_timer_register(50, handle_timer, (int *) NORMAL_FONT);
 		return;
 	}
-	else if (cookie == (uint32_t) RESTORE_FONT) 
+	else if (cookie == (uint32_t) NORMAL_FONT) 
 	{
  		text_layer_set_font(time_text, fonts[5]);
 		text_layer_set_font(date_text, fonts[5]);
 		is_animating = false;
 		return;
 	}
-*/
-	else 
-	{
-		is_animating = false;
-		return;
-	}
-	app_timer_register(marvin_animation[cookie].duration, &handle_timer, (void *) new_position);
 }
 
 static void handle_second_tick(struct tm *t, TimeUnits units_changed)
@@ -525,17 +539,17 @@ static void handle_second_tick(struct tm *t, TimeUnits units_changed)
 		update_date(t);
 	}
 
-	bool sender = false;
+	bool show = false;
 	if(seconds == 54)    //// try to catch min change during shrink/expand animation
 	{
-		sender = true;
-		int send_interval = 1;   //// Interval of animation - e.g. 5 min;
-		sender = (minutes % send_interval == 0);
+		show = true;
+		int show_interval = 1;   //// Interval of animation - e.g. 5 min;
+		show = (minutes % show_interval == 0);
 	}
     
-	if(sender)
+	if(show)
 	{
-		animate_send();
+		animate_marvin();
 	}
 }
 
