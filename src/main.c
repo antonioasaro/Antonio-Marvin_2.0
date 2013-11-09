@@ -65,18 +65,18 @@ static GFont fonts[6];
 
 static BitmapLayer *me;
 static BitmapLayer *bolt;
-static BitmapLayer *flag;
-static BitmapLayer *planet;
 static BitmapLayer *earth;
-static GBitmap *flag_image;
-static GBitmap *planet_image;
-static GBitmap *earth_image;
+static BitmapLayer *flag;
+static BitmapLayer *mars;
 static GBitmap *marvin01_image;
 static GBitmap *marvin02_image;
 static GBitmap *marvin03_image;
 static GBitmap *marvin04_image;
 static GBitmap *bolt_image;
 static GBitmap *explode_image;
+static GBitmap *earth_image;
+static GBitmap *flag_image;
+static GBitmap *mars_image;
 static PropertyAnimation send_animation[FRAME_COUNT];
 //// static PropertyAnimation explode_animation;
 
@@ -114,6 +114,12 @@ void send_animation_stopped(Animation *animation, void *data);
 static void handle_timer(void *data);
 
 
+void clear_me()
+{
+//	layer_remove_from_parent((Layer *) me.layer);
+	bitmap_layer_destroy(me);
+}
+
 void clear_time()
 {
 	text_layer_destroy(time_text); //	layer_remove_from_parent((Layer *) time_text);
@@ -122,12 +128,6 @@ void clear_time()
 void clear_date()
 {
 	text_layer_destroy(date_text); //	layer_remove_from_parent((Layer *) date_text);
-}
-
-void clear_me()
-{
-//	layer_remove_from_parent((Layer *) me.layer);
-	bitmap_layer_destroy(me);
 }
 
 void clear_bolt()
@@ -141,32 +141,33 @@ void clear_background()
 //	layer_remove_from_parent(flag);
 //	layer_remove_from_parent(planet->layer);
 //	layer_remove_from_parent(earth->layer);
-	bitmap_layer_destroy(flag);
-	bitmap_layer_destroy(planet);
 	bitmap_layer_destroy(earth);
+	bitmap_layer_destroy(flag);
+	bitmap_layer_destroy(mars);
 }
 
 void clear_screen()
 {
+	clear_me();
 	clear_time();
 	clear_date();
-	clear_me();
 	clear_bolt();
 	clear_background();
 }
 
 void setup_gbitmap()
 {
-	flag_image     = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FLAG);
-	planet_image   = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PLANET);
-	earth_image    = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_EARTH);
 	marvin01_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN01);
 	marvin02_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN02);
 	marvin03_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN03);
 	marvin04_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN04);
 	bolt_image     = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BOLT);
 	explode_image  = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_EXPLODE);
+	earth_image    = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_EARTH);
+	flag_image     = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FLAG);
+	mars_image     = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARS);
 }
+
 void setup_bolt(bool send, bool explode)
 {
 	if(explode) 
@@ -217,26 +218,21 @@ void setup_date()
 	text_layer_set_text_alignment(date_text, GTextAlignmentCenter);
  	text_layer_set_font(date_text, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_18)));
 	layer_add_child(window_get_root_layer(window), text_layer_get_layer(date_text));
-////	layer_insert_below_sibling((Layer *) &date_text, (Layer *) &inverter);
 }
 
 void setup_background()
 {
+	earth = bitmap_layer_create(GRect(4, 4, 32, 32));
+	bitmap_layer_set_bitmap(earth, earth_image);
+	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(earth));
+
 	flag = bitmap_layer_create(GRect(75, (SCREEN_HEIGHT - 90), 40, 60));
 	bitmap_layer_set_bitmap(flag, flag_image);
-/*		
-	bmp_init_container(RESOURCE_ID_IMAGE_FLAG, &flag);
-	bmp_init_container(RESOURCE_ID_IMAGE_PLANET, &planet);
-	bmp_init_container(RESOURCE_ID_IMAGE_EARTH, &earth);
+	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(flag));
 
-	layer_set_frame((Layer *) &flag.layer, GRect(75, (SCREEN_HEIGHT - 90), 40, 60));
-	layer_set_frame((Layer *) &planet.layer, GRect(0, (SCREEN_HEIGHT - 40), SCREEN_WIDTH, 40));
-	layer_set_frame((Layer *) &earth.layer, GRect(4, 4, 32, 32));
-
-	layer_insert_below_sibling((Layer *) &flag.layer, (Layer *) &inverter);
-	layer_insert_below_sibling((Layer *) &planet.layer, (Layer *) &inverter);
-	layer_insert_below_sibling((Layer *) &earth.layer, (Layer *) &inverter);
-*/
+	mars = bitmap_layer_create(GRect(0, (SCREEN_HEIGHT - 40), SCREEN_WIDTH, 40));
+	bitmap_layer_set_bitmap(mars, mars_image);
+	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(mars));
 }
 
 void setup_fonts()
@@ -591,24 +587,25 @@ static void handle_second_tick(struct tm *t, TimeUnits units_changed)
 
 void handle_init(void)
 {
+	srand(time(NULL));
+
 	window = window_create();
 	window_layer = window_get_root_layer(window);
 	window_bounds = layer_get_frame(window_layer);
 	window_stack_push(window, true /* Animated */);
 ////	tick_timer_service_subscribe(SECOND_UNIT, handle_second_tick);
 	
-	srand(time(NULL));
-
 	is_animating = false;
-////	setup_gbitmap();
 
 	setup_time();
 	setup_date();
 	time_t now = time(NULL);
-	struct tm *current_time = localtime(&now);
+	struct tm *t = localtime(&now);
+	update_time(t);
+	update_date(t);
 
-	update_time(current_time);
-	update_date(current_time);
+	setup_gbitmap();
+	setup_background();
 /*	
 //	skip_splash();
 */

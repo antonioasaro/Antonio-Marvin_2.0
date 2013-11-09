@@ -12,45 +12,45 @@
     "resources": {
         "media": [
             {
+                "type": "png",
+                "name": "IMAGE_MARVIN04",
+                "file": "images/Marvin04.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_MARVIN03",
+                "file": "images/Marvin03.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_MARVIN02",
+                "file": "images/Marvin02.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_MARVIN01",
+                "file": "images/Marvin01.png"
+            },
+            {
                 "menuIcon": true,
                 "type": "png",
-                "name": "IMAGE_MENU_ICON",
-                "file": "images/marvin_icon.png"
+                "name": "IMAGE_ICON",
+                "file": "images/Marvin_icon.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_BOLT",
+                "file": "images/Bolt.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_MARS",
+                "file": "images/Mars.png"
             },
             {
                 "type": "png",
                 "name": "IMAGE_EXPLODE",
                 "file": "images/Explode.png"
-            },
-            {
-                "type": "png",
-                "name": "IMAGE_MARVIN04",
-                "file": "images/marvin04.png"
-            },
-            {
-                "type": "png",
-                "name": "IMAGE_MARVIN01",
-                "file": "images/marvin01.png"
-            },
-            {
-                "type": "png",
-                "name": "IMAGE_MARVIN02",
-                "file": "images/marvin02.png"
-            },
-            {
-                "type": "png",
-                "name": "IMAGE_MARVIN03",
-                "file": "images/marvin03.png"
-            },
-            {
-                "type": "png",
-                "name": "IMAGE_BOLT",
-                "file": "images/bolt.png"
-            },
-            {
-                "type": "png",
-                "name": "IMAGE_PLANET",
-                "file": "images/Planet.png"
             },
             {
                 "type": "png",
