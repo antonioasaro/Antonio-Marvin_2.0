@@ -2,6 +2,7 @@
 #include "app_options.h"
 
 
+//// defines 
 #define IMAGE_COUNT 7
 #define IMAGE_WIDTH 80
 #define IMAGE_HEIGHT 80
@@ -13,7 +14,6 @@
 #define IMAGE_POS_LOWER  5
 #define IMAGE_POS_DONE   6
 	
-#define BOLT_ANIMATION_DURATION 1500
 #define FRAME_COUNT 12
 #define FRAME01 GRect(62,  68,  17, 17)     // anchor
 #define FRAME02 GRect(80,  65,  17, 17)
@@ -28,6 +28,7 @@
 #define FRAME11 GRect(75,  55,  17, 17) 
 #define FRAME12 GRect(80,  28,  17, 17)     // anchor
 #define LASTFRAME FRAME12
+#define BOLT_ANIMATION_DURATION 1500
 	
 #define SHRINK_FONT01 90
 #define SHRINK_FONT02 91
@@ -38,31 +39,20 @@
 #define EXPAND_FONT02 96
 #define EXPAND_FONT03 97
 #define EXPAND_FONT04 98
-#define RESTORE_FONT  99
+#define NORMAL_FONT   99
 
 #define TIME_FRAME_PADDING 5
 #define TIME_FRAME_Y 5 + TIME_FRAME_PADDING //61 (44 + 17) is the lowest possible point of the moving bolt animation and the padding for the top side
 #define TIME_FRAME_WIDTH SCREEN_WIDTH - (IMAGE_WIDTH / 2) //the padding for the right/left side
 #define TIME_FRAME_HEIGHT 30	
 
-typedef struct
-{
-	GRect frame;
-	uint32_t duration;
-} animation_frame;
-typedef struct
-{
-	int image_index;
-	uint32_t show_interval;
-} animation_details;
-
+// variables
 Window *window;
 Layer *window_layer;
 GRect window_bounds;
-static bool is_animating;
-static ResHandle res_h[6];
-static GFont fonts[6];   
+static AppTimer *timer;
 
+static bool is_animating;
 static BitmapLayer *marvin;
 static BitmapLayer *bolt;
 static BitmapLayer *earth;
@@ -82,39 +72,31 @@ static PropertyAnimation send_animation[FRAME_COUNT];
 
 static TextLayer *time_text;
 static TextLayer *date_text;
+static GFont fonts[6];   
+static ResHandle res_h[6];
 
-animation_frame send_frames[FRAME_COUNT];
-animation_details animation[IMAGE_COUNT] = 
-{ 
-	{	.image_index = RESOURCE_ID_IMAGE_MARVIN01,	.show_interval = 50	  },
-	{	.image_index = RESOURCE_ID_IMAGE_MARVIN02,	.show_interval = 50	  },
-	{	.image_index = RESOURCE_ID_IMAGE_MARVIN03,	.show_interval = 50	  },
-	{	.image_index = RESOURCE_ID_IMAGE_MARVIN04,	.show_interval = 500  },
-	{	.image_index = RESOURCE_ID_IMAGE_MARVIN04,	.show_interval = 1000 },
-	{	.image_index = RESOURCE_ID_IMAGE_MARVIN03,	.show_interval = 50   },
-	{	.image_index = RESOURCE_ID_IMAGE_MARVIN02,	.show_interval = 50   }
-};
+typedef struct
+{
+	GRect frame;
+	uint32_t duration;
+} bolt_frame;
+bolt_frame bolt_animation[FRAME_COUNT];
+
+typedef struct
+{
+	GBitmap *image;
+	int duration;
+}
+marvin_frame;
+marvin_frame marvin_animation[IMAGE_COUNT];
 
 
-void setup_gbitmap();
-void setup_time();
-void setup_date();
-void setup_frames();
-void setup_animation();
-void setup_screen();
-void setup_marvin();
-void setup_bolt(bool send, bool explode);
-void setup_background();
-void update_time(struct tm *t);
-void update_date(struct tm *t);
-void update_marvin(int current_position);
-void animate_bolt(bool send);
+//// prototypes
 void animate_explode();
 void animate_text();
-void send_animation_stopped(Animation *animation, void *data);
 static void handle_timer(void *data);
 
-
+//// functions
 void clear_marvin()
 {
 	bitmap_layer_destroy(marvin);
@@ -190,6 +172,21 @@ void setup_marvin()
 	bitmap_layer_set_bitmap(marvin, marvin01_image);
 	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(marvin));
 	bitmap_layer_set_compositing_mode(marvin, GCompOpAnd);
+	
+	marvin_animation[IMAGE_POS_NORMAL].duration = 50;
+	marvin_animation[IMAGE_POS_DRAW].duration 	= 50;
+	marvin_animation[IMAGE_POS_POINT].duration 	= 50;
+	marvin_animation[IMAGE_POS_AIM].duration 	= 500;
+	marvin_animation[IMAGE_POS_SHOOT].duration 	= 1000;
+	marvin_animation[IMAGE_POS_LOWER].duration 	= 50;
+	marvin_animation[IMAGE_POS_DONE].duration 	= 50;
+	marvin_animation[IMAGE_POS_NORMAL].image 	= marvin01_image; 
+	marvin_animation[IMAGE_POS_DRAW].image 		= marvin02_image; 
+	marvin_animation[IMAGE_POS_POINT].image		= marvin03_image; 
+	marvin_animation[IMAGE_POS_AIM].image 		= marvin04_image; 
+	marvin_animation[IMAGE_POS_SHOOT].image 	= marvin04_image; 
+	marvin_animation[IMAGE_POS_LOWER].image 	= marvin03_image; 
+	marvin_animation[IMAGE_POS_DONE].image 		= marvin02_image; 
 }
 
 void setup_time()
@@ -245,10 +242,11 @@ void setup_fonts()
 
 void setup_frames()
 {
+	/*
 	//send animation starts at IMAGE_POS_SHOOT
 	//so total send animation is minus the IMAGE_POS_NORMAL, IMAGE_POS_DRAW and IMAGE_POS_POINT durations
 	//118.0 is the total of the duration of the send animation_frame 
-	double duration = (BOLT_ANIMATION_DURATION - animation[IMAGE_POS_NORMAL].show_interval - animation[IMAGE_POS_DRAW].show_interval - animation[IMAGE_POS_POINT].show_interval) / 118.0;
+	double duration = (BOLT_ANIMATION_DURATION - animation_duration[IMAGE_POS_NORMAL] - animation_duration[IMAGE_POS_DRAW] - animation_duration[IMAGE_POS_POINT]) / 118.0;
 
 	//the constants below are the corresponding lengths of the frames
 	//this is to ensure that the speed of the animation is consistent
@@ -269,7 +267,7 @@ void setup_frames()
 				{	.frame = FRAME12,	.duration = 22 * duration	}
 			},
 			sizeof send_frames);
-
+*/
 }
 
 void setup_animation()
@@ -327,23 +325,20 @@ void update_date(struct tm *t)
 
 void update_marvin(int current_position)
 {
-////	if(current_position >= IMAGE_COUNT) current_position = IMAGE_POS_NORMAL;
-
-/*
-	bmp_init_container(animation[current_position].image_index, &me);
-	bitmap_layer_set_compositing_mode(&me.layer, GCompOpAnd);
-	layer_set_frame((Layer *) &me.layer, GRect(-5, 56, IMAGE_WIDTH, IMAGE_HEIGHT));
-	layer_insert_below_sibling((Layer *) &me.layer, (Layer *) &planet.layer); //&inverter);
-*/
+	bitmap_layer_set_bitmap(marvin, marvin_animation[current_position].image);
 }
 
 					  
 void animate_send()
 {
-	if(is_animating) return;
-	else is_animating = true;
+	is_animating = true;
+	timer = app_timer_register(marvin_animation[IMAGE_POS_NORMAL].duration, handle_timer, (int *) IMAGE_POS_DRAW);
+}
 
-	app_timer_register(animation[IMAGE_POS_NORMAL].show_interval, handle_timer, (void *) IMAGE_POS_DRAW);
+void animate_font()
+{
+	is_animating = true;
+	timer = app_timer_register(100, &handle_timer, (int *) SHRINK_FONT01);
 }
 
 void send_animation_stopped(Animation *animation, void *data)
@@ -366,7 +361,7 @@ void explode_animation_stopped(Animation *animation, void *data)
 	clear_marvin();
 	clear_bolt();
 	update_marvin(IMAGE_POS_NORMAL);
-	animate_text();
+	animate_font();
 }
 
 void animate_explode()
@@ -395,46 +390,12 @@ void animate_bolt(bool send)
 	}
 }
 
-void animate_text()
-{
-	is_animating = true;
-	app_timer_register(100, &handle_timer, (void *) SHRINK_FONT01);
-}
-
-static void skip_splash()
-{
-/*
-clear_screen();
-	setup_fonts();
-////	setup_inverter();
-	setup_frames();	
-	setup_animation();
-	setup_me(IMAGE_POS_NORMAL);
-	
-	is_animating = false;
-	clear_me();
-	clear_bolt();
-	setup_background();
-	setup_time();
-	setup_date();
-
-	time_t now = time(NULL);
-    struct tm *t = localtime(&now);
-	set_time(t);
-	set_date(t);
-	setup_me(IMAGE_POS_NORMAL);
-	
-	setup_animation();
-*/
-}
 
 static void handle_timer(void *data)
 {
 
 	if(is_animating == false) return;
-
-	uint32_t *temp = data;
-	uint32_t cookie = *temp;
+	uint32_t cookie = (uint32_t) data;
 	update_marvin(cookie);
 
 	static uint32_t new_position;
@@ -459,9 +420,11 @@ static void handle_timer(void *data)
 	else if(cookie == (uint32_t) IMAGE_POS_SHOOT) 
 	{
 		new_position = cookie + 1;
+/*
 		clear_bolt();
 		setup_bolt(true, false);
 		animate_bolt(true);
+*/
 	}
 	else if(cookie == (uint32_t) IMAGE_POS_LOWER) 
 	{
@@ -471,6 +434,7 @@ static void handle_timer(void *data)
 	{
 		new_position = IMAGE_POS_NORMAL;
 	}
+/*
 	else if (cookie == (uint32_t) SHRINK_FONT01) 
 	{
  		text_layer_set_font(time_text, fonts[4]);
@@ -531,7 +495,7 @@ static void handle_timer(void *data)
 	{
  		text_layer_set_font(time_text, fonts[4]);
 		text_layer_set_font(date_text, fonts[4]);
- 	    app_timer_register(50, handle_timer, (void *) RESTORE_FONT);
+ 	    app_timer_register(50, handle_timer, (void *) NORMAL_FONT);
 		return;
 	}
 	else if (cookie == (uint32_t) RESTORE_FONT) 
@@ -541,14 +505,13 @@ static void handle_timer(void *data)
 		is_animating = false;
 		return;
 	}
+*/
 	else 
 	{
 		is_animating = false;
-		new_position = IMAGE_POS_NORMAL;
 		return;
 	}
-
-	app_timer_register(animation[cookie].show_interval, &handle_timer, (void *) new_position);
+	app_timer_register(marvin_animation[cookie].duration, &handle_timer, (void *) new_position);
 }
 
 static void handle_second_tick(struct tm *t, TimeUnits units_changed)
@@ -563,8 +526,6 @@ static void handle_second_tick(struct tm *t, TimeUnits units_changed)
 	}
 
 	bool sender = false;
-////	if ((seconds % 10) == 0) sender = true;
-	
 	if(seconds == 54)    //// try to catch min change during shrink/expand animation
 	{
 		sender = true;
@@ -576,8 +537,6 @@ static void handle_second_tick(struct tm *t, TimeUnits units_changed)
 	{
 		animate_send();
 	}
-
-	
 }
 
 void handle_init(void)
@@ -588,10 +547,8 @@ void handle_init(void)
 	window_layer = window_get_root_layer(window);
 	window_bounds = layer_get_frame(window_layer);
 	window_stack_push(window, true /* Animated */);
-////	tick_timer_service_subscribe(SECOND_UNIT, handle_second_tick);
+    tick_timer_service_subscribe(SECOND_UNIT, handle_second_tick);
 	
-	is_animating = false;
-
 	setup_time();
 	setup_date();
 	time_t now = time(NULL);
@@ -600,11 +557,9 @@ void handle_init(void)
 	update_date(t);
 
 	setup_gbitmap();
+	setup_fonts();
 	setup_background();
 	setup_marvin();
-/*	
-//	skip_splash();
-*/
 }
 
 void handle_deinit(void) 
@@ -612,6 +567,7 @@ void handle_deinit(void)
 ////	clear_screen();
 }
 
+//// main function
 int main(void)
 {
   	handle_init();
