@@ -1,25 +1,8 @@
-//// #include "pebble_os.h"
-//// #include "pebble_app.h"
-//// #include "pebble_fonts.h"
-//// #include "app_info.h"
 #include <pebble.h>
 #include "app_options.h"
 
-//// #define MY_UUID { 0x77, 0x1C, 0xEE, 0xD5, 0x5E, 0xB9, 0x47, 0x36, 0x93, 0xC8, 0x2A, 0x0C, 0xE4, 0x0E, 0xFA, 0x0A }
 
-//// PBL_APP_INFO(MY_UUID, APP_NAME, APP_AUTHOR,
-////             APP_VER_MAJOR, APP_VER_MINOR,
-////             RESOURCE_ID_IMAGE_MENU_ICON,
-////             APP_INFO_WATCH_FACE
-////	     );
-
-Window *window;
-Layer *window_layer;
-GRect window_bounds;
-static bool is_animating;
-static ResHandle res_h[6];
-static GFont fonts[6];   
-
+#define IMAGE_COUNT 7
 #define IMAGE_WIDTH 80
 #define IMAGE_HEIGHT 80
 #define IMAGE_POS_NORMAL 0
@@ -30,30 +13,6 @@ static GFont fonts[6];
 #define IMAGE_POS_LOWER  5
 #define IMAGE_POS_DONE   6
 	
-static InverterLayer inverter;
-
-typedef struct
-{
-	int image_index;
-	uint32_t show_interval;
-} animation_details;
- 
-#define IMAGE_COUNT 7
-animation_details animation[IMAGE_COUNT] = 
-{ 
-	{	.image_index = RESOURCE_ID_IMAGE_MARVIN01,	.show_interval = 50	  },
-	{	.image_index = RESOURCE_ID_IMAGE_MARVIN02,	.show_interval = 50	  },
-	{	.image_index = RESOURCE_ID_IMAGE_MARVIN03,	.show_interval = 50	  },
-	{	.image_index = RESOURCE_ID_IMAGE_MARVIN04,	.show_interval = 500  },
-	{	.image_index = RESOURCE_ID_IMAGE_MARVIN04,	.show_interval = 1000 },
-	{	.image_index = RESOURCE_ID_IMAGE_MARVIN03,	.show_interval = 50   },
-	{	.image_index = RESOURCE_ID_IMAGE_MARVIN02,	.show_interval = 50   }
-};
-
-
-static BitmapLayer *me;
-//// static AppContextRef appctx;
-
 #define BOLT_ANIMATION_DURATION 1500
 #define FRAME_COUNT 12
 #define FRAME01 GRect(62,  68,  17, 17)     // anchor
@@ -70,20 +29,6 @@ static BitmapLayer *me;
 #define FRAME12 GRect(80,  28,  17, 17)     // anchor
 #define LASTFRAME FRAME12
 	
-typedef struct
-{
-	GRect frame;
-	uint32_t duration;
-} animation_frame;
-
-animation_frame send_frames[FRAME_COUNT];
-static BitmapLayer *bolt;
-static BitmapLayer *flag;
-static BitmapLayer *planet;
-static BitmapLayer *earth;
-static PropertyAnimation send_animation[FRAME_COUNT];
-static PropertyAnimation explode_animation;
-
 #define SHRINK_FONT01 90
 #define SHRINK_FONT02 91
 #define SHRINK_FONT03 92
@@ -98,11 +43,60 @@ static PropertyAnimation explode_animation;
 #define TIME_FRAME_PADDING 5
 #define TIME_FRAME_Y 5 + TIME_FRAME_PADDING //61 (44 + 17) is the lowest possible point of the moving bolt animation and the padding for the top side
 #define TIME_FRAME_WIDTH SCREEN_WIDTH - (IMAGE_WIDTH / 2) //the padding for the right/left side
-#define TIME_FRAME_HEIGHT 30
+#define TIME_FRAME_HEIGHT 30	
+
+typedef struct
+{
+	GRect frame;
+	uint32_t duration;
+} animation_frame;
+typedef struct
+{
+	int image_index;
+	uint32_t show_interval;
+} animation_details;
+
+Window *window;
+Layer *window_layer;
+GRect window_bounds;
+static bool is_animating;
+static ResHandle res_h[6];
+static GFont fonts[6];   
+
+static BitmapLayer *me;
+static BitmapLayer *bolt;
+static BitmapLayer *flag;
+static BitmapLayer *planet;
+static BitmapLayer *earth;
+static GBitmap *flag_image;
+static GBitmap *planet_image;
+static GBitmap *earth_image;
+static GBitmap *marvin01_image;
+static GBitmap *marvin02_image;
+static GBitmap *marvin03_image;
+static GBitmap *marvin04_image;
+static GBitmap *bolt_image;
+static GBitmap *explode_image;
+static PropertyAnimation send_animation[FRAME_COUNT];
+//// static PropertyAnimation explode_animation;
+
 static TextLayer *time_text;
 static TextLayer *date_text;
 
-void init_frames();
+animation_frame send_frames[FRAME_COUNT];
+animation_details animation[IMAGE_COUNT] = 
+{ 
+	{	.image_index = RESOURCE_ID_IMAGE_MARVIN01,	.show_interval = 50	  },
+	{	.image_index = RESOURCE_ID_IMAGE_MARVIN02,	.show_interval = 50	  },
+	{	.image_index = RESOURCE_ID_IMAGE_MARVIN03,	.show_interval = 50	  },
+	{	.image_index = RESOURCE_ID_IMAGE_MARVIN04,	.show_interval = 500  },
+	{	.image_index = RESOURCE_ID_IMAGE_MARVIN04,	.show_interval = 1000 },
+	{	.image_index = RESOURCE_ID_IMAGE_MARVIN03,	.show_interval = 50   },
+	{	.image_index = RESOURCE_ID_IMAGE_MARVIN02,	.show_interval = 50   }
+};
+
+
+void setup_frames();
 void setup_animation();
 void setup_screen();
 void setup_me(int current_position);
@@ -115,7 +109,9 @@ void animate_explode();
 void animate_text();
 void set_time(struct tm *t);
 void set_date(struct tm *t);
+void send_animation_stopped(Animation *animation, void *data);
 static void handle_timer(void *data);
+
 
 void clear_background()
 {
@@ -141,12 +137,12 @@ void clear_bolt()
 
 void clear_time()
 {
-//	layer_remove_from_parent((Layer *) time_text);
+	text_layer_destroy(time_text); //	layer_remove_from_parent((Layer *) time_text);
 }
 
 void clear_date()
 {
-//	layer_remove_from_parent((Layer *) date_text);
+	text_layer_destroy(date_text); //	layer_remove_from_parent((Layer *) date_text);
 }
 
 void clear_screen()
@@ -156,6 +152,165 @@ void clear_screen()
 	clear_me();
 	clear_bolt();
 	clear_background();
+}
+
+void setup_bolt(bool send, bool explode)
+{
+	if(explode) 
+	{
+//		bitmap_layer_create
+ 		bitmap_layer_set_bitmap(bolt, explode_image);
+//		bmp_init_container(RESOURCE_ID_IMAGE_EXPLODE, &bolt);
+//		layer_set_frame((Layer *) &bolt.layer, LASTFRAME);
+	}
+	else
+	{
+//		bmp_init_container(RESOURCE_ID_IMAGE_BOLT, &bolt);
+ 		bitmap_layer_set_bitmap(bolt, bolt_image);
+//		layer_set_frame((Layer *) &bolt.layer, send_frames[0].frame);
+	}
+
+//	bitmap_layer_set_compositing_mode(&bolt.layer, GCompOpAnd);
+////	layer_insert_below_sibling((Layer *) &bolt.layer, (Layer *) &inverter);
+}
+
+void setup_me(int current_position)
+{
+	if(current_position >= IMAGE_COUNT) current_position = IMAGE_POS_NORMAL;
+
+/*
+	bmp_init_container(animation[current_position].image_index, &me);
+	bitmap_layer_set_compositing_mode(&me.layer, GCompOpAnd);
+	layer_set_frame((Layer *) &me.layer, GRect(-5, 56, IMAGE_WIDTH, IMAGE_HEIGHT));
+	layer_insert_below_sibling((Layer *) &me.layer, (Layer *) &planet.layer); //&inverter);
+*/
+}
+
+void setup_time()
+{
+/*
+text_layer_init(&time_text, GRect((IMAGE_WIDTH / 2), TIME_FRAME_Y, TIME_FRAME_WIDTH, TIME_FRAME_HEIGHT));
+	
+	text_layer_set_font(&time_text, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_18)));
+	text_layer_set_text_alignment(&time_text, GTextAlignmentCenter);
+////	layer_insert_below_sibling((Layer *) &time_text, (Layer *) &inverter);
+*/
+}
+
+void setup_date()
+{
+/*
+text_layer_init(&date_text, GRect((IMAGE_WIDTH / 2), TIME_FRAME_Y + TIME_FRAME_HEIGHT, TIME_FRAME_WIDTH, TIME_FRAME_HEIGHT));
+	
+	text_layer_set_font(&date_text, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_18)));
+	text_layer_set_text_alignment(&date_text, GTextAlignmentCenter);
+////	layer_insert_below_sibling((Layer *) &date_text, (Layer *) &inverter);
+*/
+}
+
+void setup_background()
+{
+	flag = bitmap_layer_create(GRect(75, (SCREEN_HEIGHT - 90), 40, 60));
+	bitmap_layer_set_bitmap(flag, flag_image);
+/*		
+	bmp_init_container(RESOURCE_ID_IMAGE_FLAG, &flag);
+	bmp_init_container(RESOURCE_ID_IMAGE_PLANET, &planet);
+	bmp_init_container(RESOURCE_ID_IMAGE_EARTH, &earth);
+
+	layer_set_frame((Layer *) &flag.layer, GRect(75, (SCREEN_HEIGHT - 90), 40, 60));
+	layer_set_frame((Layer *) &planet.layer, GRect(0, (SCREEN_HEIGHT - 40), SCREEN_WIDTH, 40));
+	layer_set_frame((Layer *) &earth.layer, GRect(4, 4, 32, 32));
+
+	layer_insert_below_sibling((Layer *) &flag.layer, (Layer *) &inverter);
+	layer_insert_below_sibling((Layer *) &planet.layer, (Layer *) &inverter);
+	layer_insert_below_sibling((Layer *) &earth.layer, (Layer *) &inverter);
+*/
+}
+
+void setup_fonts()
+{
+	res_h[0] = resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_8);
+	res_h[1] = resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_10);
+	res_h[2] = resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_12);
+	res_h[3] = resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_14);
+	res_h[4] = resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_16);
+	res_h[5] = resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_18);
+    fonts[0] = fonts_load_custom_font(res_h[0]);
+    fonts[1] = fonts_load_custom_font(res_h[1]);
+    fonts[2] = fonts_load_custom_font(res_h[2]);
+    fonts[3] = fonts_load_custom_font(res_h[3]);
+    fonts[4] = fonts_load_custom_font(res_h[4]);
+    fonts[5] = fonts_load_custom_font(res_h[5]);
+}
+
+void setup_frames()
+{
+	//send animation starts at IMAGE_POS_SHOOT
+	//so total send animation is minus the IMAGE_POS_NORMAL, IMAGE_POS_DRAW and IMAGE_POS_POINT durations
+	//118.0 is the total of the duration of the send animation_frame 
+	double duration = (BOLT_ANIMATION_DURATION - animation[IMAGE_POS_NORMAL].show_interval - animation[IMAGE_POS_DRAW].show_interval - animation[IMAGE_POS_POINT].show_interval) / 118.0;
+
+	//the constants below are the corresponding lengths of the frames
+	//this is to ensure that the speed of the animation is consistent
+	memcpy(send_frames,
+			(animation_frame[FRAME_COUNT])
+			{
+				{ 	.frame = FRAME01,	.duration = 22 * duration	},
+				{	.frame = FRAME02,	.duration = 22 * duration	},
+				{	.frame = FRAME03,	.duration = 22 * duration	},
+				{	.frame = FRAME04,	.duration = 22 * duration	},
+				{	.frame = FRAME05,	.duration = 22 * duration	},
+				{	.frame = FRAME06,	.duration = 22 * duration	},
+				{	.frame = FRAME07,	.duration = 22 * duration	},
+				{	.frame = FRAME08,	.duration = 22 * duration	},
+				{	.frame = FRAME09,	.duration = 22 * duration	},
+				{	.frame = FRAME10,	.duration = 22 * duration	},
+				{	.frame = FRAME11,	.duration = 22 * duration	},
+				{	.frame = FRAME12,	.duration = 22 * duration	}
+			},
+			sizeof send_frames);
+
+}
+
+/*
+void setup_inverter()
+{
+	inverter_layer_init(&inverter, GRect(0, 0, SCREEN_WIDTH, (INVERT_COLOUR ? SCREEN_HEIGHT : 0)));
+	layer_add_child(&window.layer, &inverter.layer);
+}
+*/
+
+void setup_animation()
+{
+
+/*
+int total_send_delay = 0;
+
+	//since the receive animation is supposed to be the continuation of the send animation of the other watch, 
+	//start the delay at BOLT_ANIMATION_DURATION 
+	//but if the splash screen is showing, then the delay is not needed 
+
+	for(int x = 0; x < FRAME_COUNT - 1; x++) //-1 because animate_bolt looks at the current frame and the next frame in the array
+	{
+		property_animation_init_layer_frame(&send_animation[x], (Layer *) &bolt.layer, &send_frames[x].frame, &send_frames[x + 1].frame);
+		animation_set_duration(&send_animation[x].animation, send_frames[x].duration);
+		animation_set_delay(&send_animation[x].animation, total_send_delay);
+		total_send_delay += send_frames[x].duration;
+
+		if(x == FRAME_COUNT - 2) //-2 because that is the last item when the condition to break is < X - 1
+		{
+			animation_set_handlers(&send_animation[x].animation,
+								   (AnimationHandlers)
+								   {
+									   .stopped = (AnimationStoppedHandler)send_animation_stopped
+								   },
+								   NULL);
+		}
+
+		animation_set_curve(&send_animation[x].animation, AnimationCurveLinear);
+
+	}
+*/
 }
 
 void animate_send()
@@ -191,7 +346,8 @@ void explode_animation_stopped(Animation *animation, void *data)
 
 void animate_explode()
 {
-	property_animation_init_layer_frame(&explode_animation, (Layer *) &bolt.layer, &LASTFRAME, &LASTFRAME);
+/*
+property_animation_init_layer_frame(&explode_animation, (Layer *) &bolt.layer, &LASTFRAME, &LASTFRAME);
 
 	animation_set_duration(&explode_animation.animation, 1000); // animation[IMAGE_POS_RECEIVED].show_interval);
 	animation_set_curve(&explode_animation.animation, AnimationCurveEaseInOut);
@@ -203,6 +359,7 @@ void animate_explode()
 						   },
 						   NULL);
 	animation_schedule(&explode_animation.animation);
+*/
 }
 
 void animate_bolt(bool send)
@@ -219,155 +376,12 @@ void animate_text()
 	app_timer_register(100, &handle_timer, (void *) SHRINK_FONT01);
 }
 
-void init_frames()
-{
-	//send animation starts at IMAGE_POS_SHOOT
-	//so total send animation is minus the IMAGE_POS_NORMAL, IMAGE_POS_DRAW and IMAGE_POS_POINT durations
-	//118.0 is the total of the duration of the send animation_frame 
-	double duration = (BOLT_ANIMATION_DURATION - animation[IMAGE_POS_NORMAL].show_interval - animation[IMAGE_POS_DRAW].show_interval - animation[IMAGE_POS_POINT].show_interval) / 118.0;
-
-	//the constants below are the corresponding lengths of the frames
-	//this is to ensure that the speed of the animation is consistent
-	memcpy(send_frames,
-			(animation_frame[FRAME_COUNT])
-			{
-				{ 	.frame = FRAME01,	.duration = 22 * duration	},
-				{	.frame = FRAME02,	.duration = 22 * duration	},
-				{	.frame = FRAME03,	.duration = 22 * duration	},
-				{	.frame = FRAME04,	.duration = 22 * duration	},
-				{	.frame = FRAME05,	.duration = 22 * duration	},
-				{	.frame = FRAME06,	.duration = 22 * duration	},
-				{	.frame = FRAME07,	.duration = 22 * duration	},
-				{	.frame = FRAME08,	.duration = 22 * duration	},
-				{	.frame = FRAME09,	.duration = 22 * duration	},
-				{	.frame = FRAME10,	.duration = 22 * duration	},
-				{	.frame = FRAME11,	.duration = 22 * duration	},
-				{	.frame = FRAME12,	.duration = 22 * duration	}
-			},
-			sizeof send_frames);
-
-}
-
-void setup_inverter()
-{
-	inverter_layer_init(&inverter, GRect(0, 0, SCREEN_WIDTH, (INVERT_COLOUR ? SCREEN_HEIGHT : 0)));
-	layer_add_child(&window.layer, &inverter.layer);
-}
-
-void setup_animation()
-{
-
-	int total_send_delay = 0;
-
-	//since the receive animation is supposed to be the continuation of the send animation of the other watch, 
-	//start the delay at BOLT_ANIMATION_DURATION 
-	//but if the splash screen is showing, then the delay is not needed 
-
-	for(int x = 0; x < FRAME_COUNT - 1; x++) //-1 because animate_bolt looks at the current frame and the next frame in the array
-	{
-		property_animation_init_layer_frame(&send_animation[x], (Layer *) &bolt.layer, &send_frames[x].frame, &send_frames[x + 1].frame);
-		animation_set_duration(&send_animation[x].animation, send_frames[x].duration);
-		animation_set_delay(&send_animation[x].animation, total_send_delay);
-		total_send_delay += send_frames[x].duration;
-
-		if(x == FRAME_COUNT - 2) //-2 because that is the last item when the condition to break is < X - 1
-		{
-			animation_set_handlers(&send_animation[x].animation,
-								   (AnimationHandlers)
-								   {
-									   .stopped = (AnimationStoppedHandler)send_animation_stopped
-								   },
-								   NULL);
-		}
-
-		animation_set_curve(&send_animation[x].animation, AnimationCurveLinear);
-
-	}
-}
-
-void setup_bolt(bool send, bool explode)
-{
-	if(explode) 
-	{
-		bitmap_layer_create
-		bmp_init_container(RESOURCE_ID_IMAGE_EXPLODE, &bolt);
-		layer_set_frame((Layer *) &bolt.layer, LASTFRAME);
-	}
-	else
-	{
-		bmp_init_container(RESOURCE_ID_IMAGE_BOLT, &bolt);
-		layer_set_frame((Layer *) &bolt.layer, send_frames[0].frame);
-	}
-
-	bitmap_layer_set_compositing_mode(&bolt.layer, GCompOpAnd);
-	layer_insert_below_sibling((Layer *) &bolt.layer, (Layer *) &inverter);
-}
-
-void setup_me(int current_position)
-{
-	if(current_position >= IMAGE_COUNT) current_position = IMAGE_POS_NORMAL;
-
-	bmp_init_container(animation[current_position].image_index, &me);
-	bitmap_layer_set_compositing_mode(&me.layer, GCompOpAnd);
-	layer_set_frame((Layer *) &me.layer, GRect(-5, 56, IMAGE_WIDTH, IMAGE_HEIGHT));
-	layer_insert_below_sibling((Layer *) &me.layer, (Layer *) &planet.layer); //&inverter);
-}
-
-void setup_time()
-{
-	text_layer_init(&time_text, GRect((IMAGE_WIDTH / 2), TIME_FRAME_Y, TIME_FRAME_WIDTH, TIME_FRAME_HEIGHT));
-	
-	text_layer_set_font(&time_text, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_18)));
-	text_layer_set_text_alignment(&time_text, GTextAlignmentCenter);
-	layer_insert_below_sibling((Layer *) &time_text, (Layer *) &inverter);
-}
-
-void setup_date()
-{
-	text_layer_init(&date_text, GRect((IMAGE_WIDTH / 2), TIME_FRAME_Y + TIME_FRAME_HEIGHT, TIME_FRAME_WIDTH, TIME_FRAME_HEIGHT));
-	
-	text_layer_set_font(&date_text, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_18)));
-	text_layer_set_text_alignment(&date_text, GTextAlignmentCenter);
-	layer_insert_below_sibling((Layer *) &date_text, (Layer *) &inverter);
-}
-
-void setup_background()
-{
-	bmp_init_container(RESOURCE_ID_IMAGE_FLAG, &flag);
-	bmp_init_container(RESOURCE_ID_IMAGE_PLANET, &planet);
-	bmp_init_container(RESOURCE_ID_IMAGE_EARTH, &earth);
-
-	layer_set_frame((Layer *) &flag.layer, GRect(75, (SCREEN_HEIGHT - 90), 40, 60));
-	layer_set_frame((Layer *) &planet.layer, GRect(0, (SCREEN_HEIGHT - 40), SCREEN_WIDTH, 40));
-	layer_set_frame((Layer *) &earth.layer, GRect(4, 4, 32, 32));
-
-	layer_insert_below_sibling((Layer *) &flag.layer, (Layer *) &inverter);
-	layer_insert_below_sibling((Layer *) &planet.layer, (Layer *) &inverter);
-	layer_insert_below_sibling((Layer *) &earth.layer, (Layer *) &inverter);
-}
-
-void setup_fonts()
-{
-	res_h[0] = resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_8);
-	res_h[1] = resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_10);
-	res_h[2] = resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_12);
-	res_h[3] = resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_14);
-	res_h[4] = resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_16);
-	res_h[5] = resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_18);
-    fonts[0] = fonts_load_custom_font(res_h[0]);
-    fonts[1] = fonts_load_custom_font(res_h[1]);
-    fonts[2] = fonts_load_custom_font(res_h[2]);
-    fonts[3] = fonts_load_custom_font(res_h[3]);
-    fonts[4] = fonts_load_custom_font(res_h[4]);
-    fonts[5] = fonts_load_custom_font(res_h[5]);
-}
-
 static void skip_splash()
 {
 	clear_screen();
 	setup_fonts();
-	setup_inverter();
-	init_frames();	
+////	setup_inverter();
+	setup_frames();	
 	setup_animation();
 	setup_me(IMAGE_POS_NORMAL);
 	
@@ -378,8 +392,10 @@ static void skip_splash()
 	setup_time();
 	setup_date();
 
-	set_time(localtime(time(NULL)));
-	set_date(localtime(time(NULL)));
+	time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+	set_time(t);
+	set_date(t);
 	setup_me(IMAGE_POS_NORMAL);
 	
 	setup_animation();
@@ -390,8 +406,8 @@ static void handle_timer(void *data)
 
 	if(is_animating == false) return;
 
-	int cookie;
-	cookie = (int *) data;
+	int cookie = IMAGE_POS_NORMAL;
+//	cookie = *data;
 
 	clear_me();
 	setup_me(cookie);
@@ -567,6 +583,15 @@ void handle_init(void)
 	window_stack_push(window, true /* Animated */);
 	tick_timer_service_subscribe(SECOND_UNIT, handle_second_tick);
 	
+	flag_image     = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FLAG);
+	planet_image   = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PLANET);
+	earth_image    = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_EARTH);
+	marvin01_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN01);
+	marvin02_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN02);
+	marvin03_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN03);
+	marvin04_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN04);
+	bolt_image     = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BOLT);
+	explode_image  = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_EXPLODE);
 	
 	srand(time(NULL));
 	is_animating = false;
