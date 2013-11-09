@@ -2,15 +2,21 @@
     "versionLabel": "1.0",
     "uuid": "29de155f-0cfd-42a0-8d11-f7331ecc04c1",
     "appKeys": {},
-    "longName": "Antonio Marvin",
+    "longName": "Marvin",
     "versionCode": 1,
-    "shortName": "Antonio Marvin",
+    "shortName": "Marvin",
     "companyName": "antonio_asaro",
     "watchapp": {
-        "watchface": false
+        "watchface": true
     },
     "resources": {
         "media": [
+            {
+                "menuIcon": true,
+                "type": "png",
+                "name": "IMAGE_MENU_ICON",
+                "file": "images/marvin_icon.png"
+            },
             {
                 "type": "png",
                 "name": "IMAGE_EXPLODE",
@@ -35,11 +41,6 @@
                 "type": "png",
                 "name": "IMAGE_MARVIN03",
                 "file": "images/marvin03.png"
-            },
-            {
-                "type": "png",
-                "name": "IMAGE_MENU_ICON",
-                "file": "images/marvin_icon.png"
             },
             {
                 "type": "png",

@@ -202,11 +202,11 @@ void setup_me(int current_position)
 void setup_time()
 {
   	time_text = text_layer_create(GRect((IMAGE_WIDTH / 2), TIME_FRAME_Y, TIME_FRAME_WIDTH, TIME_FRAME_HEIGHT));
-  	text_layer_set_text_color(time_text, GColorBlack);
+	text_layer_set_text_color(time_text, GColorBlack);
   	text_layer_set_background_color(time_text, GColorClear);
-  	text_layer_set_font(time_text, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_18)));
+	text_layer_set_text_alignment(time_text, GTextAlignmentCenter);
+	text_layer_set_font(time_text, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_18)));
 	layer_add_child(window_get_root_layer(window), text_layer_get_layer(time_text));
-	text_layer_set_text_alignment(date_text, GTextAlignmentCenter);
 }
 
 void setup_date()
@@ -214,9 +214,9 @@ void setup_date()
   	date_text = text_layer_create(GRect((IMAGE_WIDTH / 2), TIME_FRAME_Y + TIME_FRAME_HEIGHT, TIME_FRAME_WIDTH, TIME_FRAME_HEIGHT));
   	text_layer_set_text_color(date_text, GColorBlack);
   	text_layer_set_background_color(date_text, GColorClear);
+	text_layer_set_text_alignment(date_text, GTextAlignmentCenter);
  	text_layer_set_font(date_text, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_HANDSEAN_18)));
 	layer_add_child(window_get_root_layer(window), text_layer_get_layer(date_text));
-	text_layer_set_text_alignment(date_text, GTextAlignmentCenter);
 ////	layer_insert_below_sibling((Layer *) &date_text, (Layer *) &inverter);
 }
 
@@ -601,14 +601,15 @@ void handle_init(void)
 
 	is_animating = false;
 ////	setup_gbitmap();
-/*
+
 	setup_time();
 	setup_date();
 	time_t now = time(NULL);
 	struct tm *current_time = localtime(&now);
+
 	update_time(current_time);
 	update_date(current_time);
-	
+/*	
 //	skip_splash();
 */
 }
