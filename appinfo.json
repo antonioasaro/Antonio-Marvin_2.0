@@ -13,6 +13,11 @@
         "media": [
             {
                 "type": "png",
+                "name": "IMAGE_EXPLOSION",
+                "file": "images/Explosion.png"
+            },
+            {
+                "type": "png",
                 "name": "IMAGE_MARVIN04",
                 "file": "images/Marvin04.png"
             },
@@ -46,11 +51,6 @@
                 "type": "png",
                 "name": "IMAGE_MARS",
                 "file": "images/Mars.png"
-            },
-            {
-                "type": "png",
-                "name": "IMAGE_EXPLODE",
-                "file": "images/Explode.png"
             },
             {
                 "type": "png",

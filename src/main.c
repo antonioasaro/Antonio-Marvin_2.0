@@ -55,6 +55,7 @@ static AppTimer *timer;
 static bool is_animating;
 static BitmapLayer *marvin;
 static BitmapLayer *bolt;
+static BitmapLayer *explosion;
 static BitmapLayer *earth;
 static BitmapLayer *flag;
 static BitmapLayer *mars;
@@ -63,7 +64,7 @@ static GBitmap *marvin02_image;
 static GBitmap *marvin03_image;
 static GBitmap *marvin04_image;
 static GBitmap *bolt_image;
-static GBitmap *explode_image;
+static GBitmap *explosion_image;
 static GBitmap *earth_image;
 static GBitmap *flag_image;
 static GBitmap *mars_image;
@@ -92,7 +93,7 @@ marvin_frame marvin_animation[IMAGE_COUNT];
 
 
 //// prototypes
-void animate_explode();
+//// void animate_explode();
 void animate_text();
 static void handle_timer(void *data);
 
@@ -117,6 +118,11 @@ void clear_bolt()
 	bitmap_layer_destroy(bolt);
 }
 
+void clear_explosion()
+{
+	bitmap_layer_destroy(explosion);
+}
+
 void clear_background()
 {
 	bitmap_layer_destroy(earth);
@@ -124,31 +130,36 @@ void clear_background()
 	bitmap_layer_destroy(mars);
 }
 
-void clear_screen()
+void clear_all()
 {
 	clear_marvin();
 	clear_time();
 	clear_date();
 	clear_bolt();
+	clear_explosion();
 	clear_background();
 }
 
 //// setup functions
 void setup_gbitmap()
 {
-	marvin01_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN01);
-	marvin02_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN02);
-	marvin03_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN03);
-	marvin04_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN04);
-	bolt_image     = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BOLT);
-	explode_image  = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_EXPLODE);
-	earth_image    = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_EARTH);
-	flag_image     = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FLAG);
-	mars_image     = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARS);
+	marvin01_image  = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN01);
+	marvin02_image  = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN02);
+	marvin03_image  = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN03);
+	marvin04_image  = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARVIN04);
+	bolt_image      = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BOLT);
+	explosion_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_EXPLOSION);
+	earth_image     = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_EARTH);
+	flag_image      = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FLAG);
+	mars_image      = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MARS);
 }
 
-void setup_bolt(bool send, bool explode)
+void setup_bolt()
 {
+	bolt = bitmap_layer_create(FRAME01);
+	bitmap_layer_set_bitmap(bolt, bolt_image);
+	bitmap_layer_set_compositing_mode(bolt, GCompOpAnd);
+/*	
 	if(explode) 
 	{
 //		bitmap_layer_create
@@ -165,14 +176,22 @@ void setup_bolt(bool send, bool explode)
 
 //	bitmap_layer_set_compositing_mode(&bolt.layer, GCompOpAnd);
 ////	layer_insert_below_sibling((Layer *) &bolt.layer, (Layer *) &inverter);
+*/
+}
+
+void setup_explosion()
+{
+	explosion = bitmap_layer_create(LASTFRAME);
+	bitmap_layer_set_bitmap(explosion, explosion_image);
+	bitmap_layer_set_compositing_mode(explosion, GCompOpAnd);
 }
 
 void setup_marvin()
 {
 	marvin = bitmap_layer_create(GRect(-5, 56, IMAGE_WIDTH, IMAGE_HEIGHT));
 	bitmap_layer_set_bitmap(marvin, marvin01_image);
-	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(marvin));
 	bitmap_layer_set_compositing_mode(marvin, GCompOpAnd);
+	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(marvin));
 	
 	marvin_animation[IMAGE_POS_NORMAL].duration = 50;
 	marvin_animation[IMAGE_POS_DRAW].duration 	= 50;
@@ -243,8 +262,8 @@ void setup_fonts()
 
 void setup_frames()
 {
-	/*
-	//send animation starts at IMAGE_POS_SHOOT
+/*
+//send animation starts at IMAGE_POS_SHOOT
 	//so total send animation is minus the IMAGE_POS_NORMAL, IMAGE_POS_DRAW and IMAGE_POS_POINT durations
 	//118.0 is the total of the duration of the send animation_frame 
 	double duration = (BOLT_ANIMATION_DURATION - animation_duration[IMAGE_POS_NORMAL] - animation_duration[IMAGE_POS_DRAW] - animation_duration[IMAGE_POS_POINT]) / 118.0;
@@ -330,7 +349,6 @@ void update_marvin(int current_position)
 	bitmap_layer_set_bitmap(marvin, marvin_animation[current_position].image);
 }
 
-					  
 //// animate functions
 void animate_marvin()
 {
@@ -344,30 +362,7 @@ void animate_font()
 	timer = app_timer_register(100, &handle_timer, (int *) SHRINK_FONT01);
 }
 
-void send_animation_stopped(Animation *animation, void *data)
-{
-	(void) animation;
-	(void) data;
-
-	clear_bolt();
-	setup_bolt(true, true);
-	animate_explode();
-}
-
-void explode_animation_stopped(Animation *animation, void *data)
-{
-	(void)animation;
-	(void)data;
-
-	is_animating = false;
-
-	clear_marvin();
-	clear_bolt();
-	update_marvin(IMAGE_POS_NORMAL);
-	animate_font();
-}
-
-void animate_explode()
+void animate_explosion()
 {
 /*
 property_animation_init_layer_frame(&explode_animation, (Layer *) &bolt.layer, &LASTFRAME, &LASTFRAME);
@@ -393,6 +388,21 @@ void animate_bolt(bool send)
 	}
 }
 
+//// stopped functions
+void send_animation_stopped(Animation *animation, void *data)
+{
+	clear_bolt();
+	setup_bolt(true, true);
+	animate_explosion();
+}
+
+void explosion_animation_stopped(Animation *animation, void *data)
+{
+	is_animating = false;
+	clear_bolt();
+	update_marvin(IMAGE_POS_NORMAL);
+	animate_font();
+}
 
 //// handle functions
 static void handle_timer(void *data)
@@ -574,6 +584,8 @@ void handle_init(void)
 	setup_fonts();
 	setup_background();
 	setup_marvin();
+	setup_bolt();
+	setup_explosion();
 }
 
 void handle_deinit(void) 
