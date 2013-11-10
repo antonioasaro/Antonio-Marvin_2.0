@@ -28,6 +28,7 @@
 #define FRAME11 GRect(75,  55,  17, 17) 
 #define FRAME12 GRect(80,  28,  17, 17)     // anchor
 #define LASTFRAME FRAME12
+#define LASTINDEX 12-1
 #define BOLT_ANIMATION_DURATION 1500
 	
 #define SHRINK_FONT01 90
@@ -69,9 +70,7 @@ static GBitmap *earth_image;
 static GBitmap *flag_image;
 static GBitmap *mars_image;
 static PropertyAnimation *bolt_animation[FRAME_COUNT];
-//// static PropertyAnimation send_animation[FRAME_COUNT];
-//// static PropertyAnimation explode_animation;
-
+static PropertyAnimation *explosion_animation;
 static TextLayer *time_text;
 static TextLayer *date_text;
 static GFont fonts[6];   
@@ -248,7 +247,7 @@ void setup_fonts()
 
 void setup_bolt_frames()
 {
-	double duration = 10;
+	double duration = 20;
 	bolt_frames[0].frame  = FRAME01; bolt_frames[0].duration  = 25 * duration;
 	bolt_frames[1].frame  = FRAME02; bolt_frames[1].duration  = 25 * duration;
 	bolt_frames[2].frame  = FRAME03; bolt_frames[2].duration  = 25 * duration;
@@ -283,6 +282,18 @@ void setup_bolt_animation()
 		}
 
 	}
+}
+
+void setup_explosion_animation()
+{
+	explosion_animation = property_animation_create_layer_frame(bitmap_layer_get_layer(explosion), NULL, &bolt_frames[LASTINDEX].frame);
+	animation_set_duration((Animation*) explosion_animation, 500);
+	animation_set_delay((Animation*) explosion_animation, 0);
+	animation_set_curve((Animation*) explosion_animation, AnimationCurveLinear);
+	animation_set_handlers((Animation*) explosion_animation, (AnimationHandlers) {
+ 		.started = (AnimationStartedHandler) explosion_animation_started,
+ 		.stopped = (AnimationStoppedHandler) explosion_animation_stopped,
+    }, NULL /* callback data */);
 }
 
 //// update functions
@@ -334,51 +345,29 @@ void animate_bolt()
 
 void animate_explosion()
 {
-/*
-property_animation_init_layer_frame(&explode_animation, (Layer *) &bolt.layer, &LASTFRAME, &LASTFRAME);
-
-	animation_set_duration(&explode_animation.animation, 1000); // animation[IMAGE_POS_RECEIVED].show_interval);
-	animation_set_curve(&explode_animation.animation, AnimationCurveEaseInOut);
-
-	animation_set_handlers(&explode_animation.animation,
-						   (AnimationHandlers)
-						   {
-							   .stopped = (AnimationStoppedHandler)explode_animation_stopped
-						   },
-						   NULL);
-	animation_schedule(&explode_animation.animation);
-*/
-	explosion_animation_stopped(NULL, NULL, NULL);
+	animation_schedule((Animation*) explosion_animation);
 }
 
 //// started + stopped functions
 static void bolt_animation_started(Animation *animation, void *data)
 {
+	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(bolt));
 }
 
 static void bolt_animation_stopped(Animation *animation, bool finished, void *data)
-/// void bolt_animation_stopped(Animation *animation, void *data)
 {
-/*
-	clear_bolt();
-	setup_bolt(true, true);
-	animate_explosion();
-*/
+ 	layer_remove_from_parent(bitmap_layer_get_layer(bolt));
 	animate_explosion();
 }
 
 static void explosion_animation_started(Animation *animation, void *data)
 {
+	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(explosion));
 }
 
 static void explosion_animation_stopped(Animation *animation, bool finished, void *data)
-////void explosion_animation_stopped(Animation *animation, void *data)
 {
-/*
-	is_animating = false;
-	clear_bolt();
-	update_marvin(IMAGE_POS_NORMAL);
-*/
+ 	layer_remove_from_parent(bitmap_layer_get_layer(explosion));
 	animate_font();
 }
 
@@ -394,7 +383,6 @@ static void handle_timer(void *data)
 		is_animating = false;
 		update_marvin(cookie);
 		new_position = IMAGE_POS_NORMAL;
-		animate_font();
 		return;
 	}
 	else if(cookie == (uint32_t) IMAGE_POS_DRAW) 
@@ -559,9 +547,10 @@ void handle_init(void)
 	setup_background();
 	setup_marvin();
 	setup_bolt();
+	setup_explosion();
 	setup_bolt_frames();
 	setup_bolt_animation();
-	setup_explosion();
+	setup_explosion_animation();
 }
 
 void handle_deinit(void) 
