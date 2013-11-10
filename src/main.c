@@ -262,39 +262,25 @@ void setup_fonts()
 
 void setup_frames()
 {
-/*
-//send animation starts at IMAGE_POS_SHOOT
-	//so total send animation is minus the IMAGE_POS_NORMAL, IMAGE_POS_DRAW and IMAGE_POS_POINT durations
-	//118.0 is the total of the duration of the send animation_frame 
-	double duration = (BOLT_ANIMATION_DURATION - animation_duration[IMAGE_POS_NORMAL] - animation_duration[IMAGE_POS_DRAW] - animation_duration[IMAGE_POS_POINT]) / 118.0;
-
-	//the constants below are the corresponding lengths of the frames
-	//this is to ensure that the speed of the animation is consistent
-	memcpy(send_frames,
-			(animation_frame[FRAME_COUNT])
-			{
-				{ 	.frame = FRAME01,	.duration = 22 * duration	},
-				{	.frame = FRAME02,	.duration = 22 * duration	},
-				{	.frame = FRAME03,	.duration = 22 * duration	},
-				{	.frame = FRAME04,	.duration = 22 * duration	},
-				{	.frame = FRAME05,	.duration = 22 * duration	},
-				{	.frame = FRAME06,	.duration = 22 * duration	},
-				{	.frame = FRAME07,	.duration = 22 * duration	},
-				{	.frame = FRAME08,	.duration = 22 * duration	},
-				{	.frame = FRAME09,	.duration = 22 * duration	},
-				{	.frame = FRAME10,	.duration = 22 * duration	},
-				{	.frame = FRAME11,	.duration = 22 * duration	},
-				{	.frame = FRAME12,	.duration = 22 * duration	}
-			},
-			sizeof send_frames);
-*/
+	double duration = (BOLT_ANIMATION_DURATION - marvin_animation[IMAGE_POS_NORMAL].duration - marvin_animation[IMAGE_POS_DRAW].duration - marvin_animation[IMAGE_POS_POINT].duration) / 118.0;
+	bolt_animation[0].frame  = FRAME01; bolt_animation[0].duration  = 25 * duration;
+	bolt_animation[1].frame  = FRAME02; bolt_animation[1].duration  = 25 * duration;
+	bolt_animation[2].frame  = FRAME03; bolt_animation[2].duration  = 25 * duration;
+	bolt_animation[3].frame  = FRAME04; bolt_animation[3].duration  = 25 * duration;
+	bolt_animation[4].frame  = FRAME05; bolt_animation[4].duration  = 25 * duration;
+	bolt_animation[5].frame  = FRAME06; bolt_animation[5].duration  = 25 * duration;
+	bolt_animation[6].frame  = FRAME07; bolt_animation[6].duration  = 25 * duration;
+	bolt_animation[7].frame  = FRAME08; bolt_animation[7].duration  = 25 * duration;
+	bolt_animation[8].frame  = FRAME09; bolt_animation[8].duration  = 25 * duration;
+	bolt_animation[9].frame  = FRAME10; bolt_animation[9].duration  = 25 * duration;
+	bolt_animation[10].frame = FRAME11; bolt_animation[10].duration = 25 * duration;
+	bolt_animation[11].frame = FRAME12; bolt_animation[11].duration = 25 * duration;
 }
 
 void setup_animation()
 {
-
 /*
-int total_send_delay = 0;
+	int total_send_delay = 0;
 
 	//since the receive animation is supposed to be the continuation of the send animation of the other watch, 
 	//start the delay at BOLT_ANIMATION_DURATION 
@@ -362,6 +348,14 @@ void animate_font()
 	timer = app_timer_register(100, &handle_timer, (int *) SHRINK_FONT01);
 }
 
+void animate_bolt(bool send)
+{
+	for(int x = 0; x < FRAME_COUNT - 1; x++)
+	{
+		animation_schedule(&send_animation[x].animation);
+	}
+}
+
 void animate_explosion()
 {
 /*
@@ -378,14 +372,6 @@ property_animation_init_layer_frame(&explode_animation, (Layer *) &bolt.layer, &
 						   NULL);
 	animation_schedule(&explode_animation.animation);
 */
-}
-
-void animate_bolt(bool send)
-{
-	for(int x = 0; x < FRAME_COUNT - 1; x++)
-	{
-		animation_schedule(&send_animation[x].animation);
-	}
 }
 
 //// stopped functions
@@ -447,8 +433,7 @@ static void handle_timer(void *data)
 /*
 		clear_bolt();
 		setup_bolt(true, false);
-		animate_bolt(true);
-*/
+*/		animate_bolt(true);
 		timer = app_timer_register(marvin_animation[cookie].duration, &handle_timer, (void *) new_position);
 		return;
 	}
@@ -585,6 +570,7 @@ void handle_init(void)
 	setup_background();
 	setup_marvin();
 	setup_bolt();
+	setup_frames();
 	setup_explosion();
 }
 
