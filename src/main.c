@@ -163,6 +163,7 @@ void setup_bolt()
 	bitmap_layer_set_bitmap(bolt, bolt_image);
 	bitmap_layer_set_compositing_mode(bolt, GCompOpAnd);
 	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(bolt));
+	layer_set_hidden(bitmap_layer_get_layer(bolt), true);	
 }
 
 void setup_explosion()
@@ -171,6 +172,7 @@ void setup_explosion()
 	bitmap_layer_set_bitmap(explosion, explosion_image);
 	bitmap_layer_set_compositing_mode(explosion, GCompOpAnd);
 	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(explosion));
+	layer_set_hidden(bitmap_layer_get_layer(explosion), true);	
 }
 
 void setup_marvin()
@@ -339,6 +341,7 @@ void animate_font()
 
 void animate_bolt()
 {
+	layer_set_hidden(bitmap_layer_get_layer(bolt), false);	
 	for(int x = 0; x < FRAME_COUNT - 1; x++)
 	{
 		animation_schedule((Animation*) bolt_animation[x]);
@@ -347,6 +350,7 @@ void animate_bolt()
 
 void animate_explosion()
 {
+	layer_set_hidden(bitmap_layer_get_layer(explosion), false);	
 	animation_schedule((Animation*) explosion_animation);
 }
 
@@ -357,6 +361,7 @@ static void bolt_animation_started(Animation *animation, void *data)
 
 static void bolt_animation_stopped(Animation *animation, bool finished, void *data)
 {
+	layer_set_hidden(bitmap_layer_get_layer(bolt), true);	
 	animate_explosion();
 }
 
@@ -366,6 +371,7 @@ static void explosion_animation_started(Animation *animation, void *data)
 
 static void explosion_animation_stopped(Animation *animation, bool finished, void *data)
 {
+	layer_set_hidden(bitmap_layer_get_layer(explosion), true);	
 	animate_font();
 }
 
