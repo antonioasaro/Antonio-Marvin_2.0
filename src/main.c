@@ -101,6 +101,19 @@ static void explosion_animation_stopped(Animation *animation, bool finished, voi
 
 
 //// clear functions
+void clear_gbitmap()
+{
+	gbitmap_destroy(marvin01_image);
+	gbitmap_destroy(marvin02_image);
+	gbitmap_destroy(marvin03_image);
+	gbitmap_destroy(marvin04_image);
+	gbitmap_destroy(bolt_image);
+	gbitmap_destroy(explosion_image);
+	gbitmap_destroy(earth_image);
+	gbitmap_destroy(flag_image);
+	gbitmap_destroy(mars_image); 
+}
+
 void clear_marvin()
 {
 	bitmap_layer_destroy(marvin);
@@ -135,6 +148,7 @@ void clear_background()
 
 void clear_all()
 {
+	clear_gbitmap();
 	clear_marvin();
 	clear_time();
 	clear_date();
