@@ -94,10 +94,11 @@ marvin_frame marvin_frames[IMAGE_COUNT];
 
 
 //// prototypes
-//// void animate_explode();
-//// void animate_text();
 static void handle_timer(void *data);
-//// static void bolt_animation_stopped(Animation *animation, bool finished, void *data);
+static void bolt_animation_started(Animation *animation, void *data);
+static void bolt_animation_stopped(Animation *animation, bool finished, void *data);
+static void explosion_animation_started(Animation *animation, void *data);
+static void explosion_animation_stopped(Animation *animation, bool finished, void *data);
 
 
 //// clear functions
@@ -245,10 +246,9 @@ void setup_fonts()
     fonts[5] = fonts_load_custom_font(res_h[5]);
 }
 
-void setup_frames()
+void setup_bolt_frames()
 {
 	double duration = 10;
-//	(BOLT_ANIMATION_DURATION - marvin_frames[IMAGE_POS_NORMAL].duration - marvin_frames[IMAGE_POS_DRAW].duration - marvin_frames[IMAGE_POS_POINT].duration) / 118.0;
 	bolt_frames[0].frame  = FRAME01; bolt_frames[0].duration  = 25 * duration;
 	bolt_frames[1].frame  = FRAME02; bolt_frames[1].duration  = 25 * duration;
 	bolt_frames[2].frame  = FRAME03; bolt_frames[2].duration  = 25 * duration;
@@ -263,30 +263,26 @@ void setup_frames()
 	bolt_frames[11].frame = FRAME12; bolt_frames[11].duration = 25 * duration;
 }
 
-void setup_animation()
+void setup_bolt_animation()
 {
-/*
 	int total_send_delay = 0;
 	for(int x = 0; x < FRAME_COUNT - 1; x++) //-1 because animate_bolt looks at the current frame and the next frame in the array
 	{
 		bolt_animation[x] = property_animation_create_layer_frame(bitmap_layer_get_layer(bolt), &bolt_frames[x].frame, &bolt_frames[x + 1].frame);
-		animation_set_duration((Animation*) bolt_animation[x].animation, bolt_frames[x].duration);
-		animation_set_delay((Animation*) bolt_animation[x].animation, total_send_delay);
-		animation_set_curve((Animation*) bolt_animation[x].animation, AnimationCurveLinear);
+		animation_set_duration((Animation*) bolt_animation[x], bolt_frames[x].duration);
+		animation_set_delay((Animation*) bolt_animation[x], total_send_delay);
+		animation_set_curve((Animation*) bolt_animation[x], AnimationCurveLinear);
 		total_send_delay += bolt_frames[x].duration;
 
 		if(x == FRAME_COUNT - 2) //-2 because that is the last item when the condition to break is < X - 1
 		{
-			animation_set_handlers(bolt_animation[x].animation,
-								   (AnimationHandlers)
-								   {
-									   .stopped = (AnimationStoppedHandler)bolt_animation_stopped
-								   },
-								   NULL);
+			animation_set_handlers((Animation*) bolt_animation[x], (AnimationHandlers) {
+    			.started = (AnimationStartedHandler) bolt_animation_started,
+    			.stopped = (AnimationStoppedHandler) bolt_animation_stopped,
+            }, NULL /* callback data */);
 		}
 
 	}
-*/
 }
 
 //// update functions
@@ -332,7 +328,7 @@ void animate_bolt()
 {
 	for(int x = 0; x < FRAME_COUNT - 1; x++)
 	{
-////		animation_schedule((Animation*) bolt_animation[x].animation);
+		animation_schedule((Animation*) bolt_animation[x]);
 	}
 }
 
@@ -352,10 +348,15 @@ property_animation_init_layer_frame(&explode_animation, (Layer *) &bolt.layer, &
 						   NULL);
 	animation_schedule(&explode_animation.animation);
 */
+	explosion_animation_stopped(NULL, NULL, NULL);
 }
 
-//// stopped functions
-void bolt_animation_stopped(Animation *animation, bool finished, void *data)
+//// started + stopped functions
+static void bolt_animation_started(Animation *animation, void *data)
+{
+}
+
+static void bolt_animation_stopped(Animation *animation, bool finished, void *data)
 /// void bolt_animation_stopped(Animation *animation, void *data)
 {
 /*
@@ -363,14 +364,21 @@ void bolt_animation_stopped(Animation *animation, bool finished, void *data)
 	setup_bolt(true, true);
 	animate_explosion();
 */
-	animate_font();
+	animate_explosion();
 }
 
-void explosion_animation_stopped(Animation *animation, void *data)
+static void explosion_animation_started(Animation *animation, void *data)
 {
+}
+
+static void explosion_animation_stopped(Animation *animation, bool finished, void *data)
+////void explosion_animation_stopped(Animation *animation, void *data)
+{
+/*
 	is_animating = false;
 	clear_bolt();
 	update_marvin(IMAGE_POS_NORMAL);
+*/
 	animate_font();
 }
 
@@ -551,7 +559,8 @@ void handle_init(void)
 	setup_background();
 	setup_marvin();
 	setup_bolt();
-	setup_frames();
+	setup_bolt_frames();
+	setup_bolt_animation();
 	setup_explosion();
 }
 
