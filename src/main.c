@@ -68,7 +68,8 @@ static GBitmap *explosion_image;
 static GBitmap *earth_image;
 static GBitmap *flag_image;
 static GBitmap *mars_image;
-static PropertyAnimation send_animation[FRAME_COUNT];
+static PropertyAnimation *bolt_animation[FRAME_COUNT];
+//// static PropertyAnimation send_animation[FRAME_COUNT];
 //// static PropertyAnimation explode_animation;
 
 static TextLayer *time_text;
@@ -81,7 +82,7 @@ typedef struct
 	GRect frame;
 	uint32_t duration;
 } bolt_frame;
-bolt_frame bolt_animation[FRAME_COUNT];
+bolt_frame bolt_frames[FRAME_COUNT];
 
 typedef struct
 {
@@ -89,13 +90,15 @@ typedef struct
 	int duration;
 }
 marvin_frame;
-marvin_frame marvin_animation[IMAGE_COUNT];
+marvin_frame marvin_frames[IMAGE_COUNT];
 
 
 //// prototypes
 //// void animate_explode();
-void animate_text();
+//// void animate_text();
 static void handle_timer(void *data);
+//// static void bolt_animation_stopped(Animation *animation, bool finished, void *data);
+
 
 //// clear functions
 void clear_marvin()
@@ -159,24 +162,6 @@ void setup_bolt()
 	bolt = bitmap_layer_create(FRAME01);
 	bitmap_layer_set_bitmap(bolt, bolt_image);
 	bitmap_layer_set_compositing_mode(bolt, GCompOpAnd);
-/*	
-	if(explode) 
-	{
-//		bitmap_layer_create
- 		bitmap_layer_set_bitmap(bolt, explode_image);
-//		bmp_init_container(RESOURCE_ID_IMAGE_EXPLODE, &bolt);
-//		layer_set_frame((Layer *) &bolt.layer, LASTFRAME);
-	}
-	else
-	{
-//		bmp_init_container(RESOURCE_ID_IMAGE_BOLT, &bolt);
- 		bitmap_layer_set_bitmap(bolt, bolt_image);
-//		layer_set_frame((Layer *) &bolt.layer, send_frames[0].frame);
-	}
-
-//	bitmap_layer_set_compositing_mode(&bolt.layer, GCompOpAnd);
-////	layer_insert_below_sibling((Layer *) &bolt.layer, (Layer *) &inverter);
-*/
 }
 
 void setup_explosion()
@@ -193,20 +178,20 @@ void setup_marvin()
 	bitmap_layer_set_compositing_mode(marvin, GCompOpAnd);
 	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(marvin));
 	
-	marvin_animation[IMAGE_POS_NORMAL].duration = 50;
-	marvin_animation[IMAGE_POS_DRAW].duration 	= 50;
-	marvin_animation[IMAGE_POS_POINT].duration 	= 50;
-	marvin_animation[IMAGE_POS_AIM].duration 	= 500;
-	marvin_animation[IMAGE_POS_SHOOT].duration 	= 1000;
-	marvin_animation[IMAGE_POS_LOWER].duration 	= 50;
-	marvin_animation[IMAGE_POS_DONE].duration 	= 50;
-	marvin_animation[IMAGE_POS_NORMAL].image 	= marvin01_image; 
-	marvin_animation[IMAGE_POS_DRAW].image 		= marvin02_image; 
-	marvin_animation[IMAGE_POS_POINT].image		= marvin03_image; 
-	marvin_animation[IMAGE_POS_AIM].image 		= marvin04_image; 
-	marvin_animation[IMAGE_POS_SHOOT].image 	= marvin04_image; 
-	marvin_animation[IMAGE_POS_LOWER].image 	= marvin03_image; 
-	marvin_animation[IMAGE_POS_DONE].image 		= marvin02_image; 
+	marvin_frames[IMAGE_POS_NORMAL].duration = 50;
+	marvin_frames[IMAGE_POS_DRAW].duration 	 = 50;
+	marvin_frames[IMAGE_POS_POINT].duration  = 50;
+	marvin_frames[IMAGE_POS_AIM].duration 	 = 500;
+	marvin_frames[IMAGE_POS_SHOOT].duration  = 1000;
+	marvin_frames[IMAGE_POS_LOWER].duration  = 50;
+	marvin_frames[IMAGE_POS_DONE].duration 	 = 50;
+	marvin_frames[IMAGE_POS_NORMAL].image 	 = marvin01_image; 
+	marvin_frames[IMAGE_POS_DRAW].image 	 = marvin02_image; 
+	marvin_frames[IMAGE_POS_POINT].image	 = marvin03_image; 
+	marvin_frames[IMAGE_POS_AIM].image 	 	 = marvin04_image; 
+	marvin_frames[IMAGE_POS_SHOOT].image 	 = marvin04_image; 
+	marvin_frames[IMAGE_POS_LOWER].image 	 = marvin03_image; 
+	marvin_frames[IMAGE_POS_DONE].image 	 = marvin02_image; 
 }
 
 void setup_time()
@@ -262,48 +247,43 @@ void setup_fonts()
 
 void setup_frames()
 {
-	double duration = (BOLT_ANIMATION_DURATION - marvin_animation[IMAGE_POS_NORMAL].duration - marvin_animation[IMAGE_POS_DRAW].duration - marvin_animation[IMAGE_POS_POINT].duration) / 118.0;
-	bolt_animation[0].frame  = FRAME01; bolt_animation[0].duration  = 25 * duration;
-	bolt_animation[1].frame  = FRAME02; bolt_animation[1].duration  = 25 * duration;
-	bolt_animation[2].frame  = FRAME03; bolt_animation[2].duration  = 25 * duration;
-	bolt_animation[3].frame  = FRAME04; bolt_animation[3].duration  = 25 * duration;
-	bolt_animation[4].frame  = FRAME05; bolt_animation[4].duration  = 25 * duration;
-	bolt_animation[5].frame  = FRAME06; bolt_animation[5].duration  = 25 * duration;
-	bolt_animation[6].frame  = FRAME07; bolt_animation[6].duration  = 25 * duration;
-	bolt_animation[7].frame  = FRAME08; bolt_animation[7].duration  = 25 * duration;
-	bolt_animation[8].frame  = FRAME09; bolt_animation[8].duration  = 25 * duration;
-	bolt_animation[9].frame  = FRAME10; bolt_animation[9].duration  = 25 * duration;
-	bolt_animation[10].frame = FRAME11; bolt_animation[10].duration = 25 * duration;
-	bolt_animation[11].frame = FRAME12; bolt_animation[11].duration = 25 * duration;
+	double duration = 10;
+//	(BOLT_ANIMATION_DURATION - marvin_frames[IMAGE_POS_NORMAL].duration - marvin_frames[IMAGE_POS_DRAW].duration - marvin_frames[IMAGE_POS_POINT].duration) / 118.0;
+	bolt_frames[0].frame  = FRAME01; bolt_frames[0].duration  = 25 * duration;
+	bolt_frames[1].frame  = FRAME02; bolt_frames[1].duration  = 25 * duration;
+	bolt_frames[2].frame  = FRAME03; bolt_frames[2].duration  = 25 * duration;
+	bolt_frames[3].frame  = FRAME04; bolt_frames[3].duration  = 25 * duration;
+	bolt_frames[4].frame  = FRAME05; bolt_frames[4].duration  = 25 * duration;
+	bolt_frames[5].frame  = FRAME06; bolt_frames[5].duration  = 25 * duration;
+	bolt_frames[6].frame  = FRAME07; bolt_frames[6].duration  = 25 * duration;
+	bolt_frames[7].frame  = FRAME08; bolt_frames[7].duration  = 25 * duration;
+	bolt_frames[8].frame  = FRAME09; bolt_frames[8].duration  = 25 * duration;
+	bolt_frames[9].frame  = FRAME10; bolt_frames[9].duration  = 25 * duration;
+	bolt_frames[10].frame = FRAME11; bolt_frames[10].duration = 25 * duration;
+	bolt_frames[11].frame = FRAME12; bolt_frames[11].duration = 25 * duration;
 }
 
 void setup_animation()
 {
 /*
 	int total_send_delay = 0;
-
-	//since the receive animation is supposed to be the continuation of the send animation of the other watch, 
-	//start the delay at BOLT_ANIMATION_DURATION 
-	//but if the splash screen is showing, then the delay is not needed 
-
 	for(int x = 0; x < FRAME_COUNT - 1; x++) //-1 because animate_bolt looks at the current frame and the next frame in the array
 	{
-		property_animation_init_layer_frame(&send_animation[x], (Layer *) &bolt.layer, &send_frames[x].frame, &send_frames[x + 1].frame);
-		animation_set_duration(&send_animation[x].animation, send_frames[x].duration);
-		animation_set_delay(&send_animation[x].animation, total_send_delay);
-		total_send_delay += send_frames[x].duration;
+		bolt_animation[x] = property_animation_create_layer_frame(bitmap_layer_get_layer(bolt), &bolt_frames[x].frame, &bolt_frames[x + 1].frame);
+		animation_set_duration((Animation*) bolt_animation[x].animation, bolt_frames[x].duration);
+		animation_set_delay((Animation*) bolt_animation[x].animation, total_send_delay);
+		animation_set_curve((Animation*) bolt_animation[x].animation, AnimationCurveLinear);
+		total_send_delay += bolt_frames[x].duration;
 
 		if(x == FRAME_COUNT - 2) //-2 because that is the last item when the condition to break is < X - 1
 		{
-			animation_set_handlers(&send_animation[x].animation,
+			animation_set_handlers(bolt_animation[x].animation,
 								   (AnimationHandlers)
 								   {
-									   .stopped = (AnimationStoppedHandler)send_animation_stopped
+									   .stopped = (AnimationStoppedHandler)bolt_animation_stopped
 								   },
 								   NULL);
 		}
-
-		animation_set_curve(&send_animation[x].animation, AnimationCurveLinear);
 
 	}
 */
@@ -332,14 +312,14 @@ void update_date(struct tm *t)
 
 void update_marvin(int current_position)
 {
-	bitmap_layer_set_bitmap(marvin, marvin_animation[current_position].image);
+	bitmap_layer_set_bitmap(marvin, marvin_frames[current_position].image);
 }
 
 //// animate functions
 void animate_marvin()
 {
 	is_animating = true;
-	timer = app_timer_register(marvin_animation[IMAGE_POS_NORMAL].duration, handle_timer, (int *) IMAGE_POS_DRAW);
+	timer = app_timer_register(marvin_frames[IMAGE_POS_NORMAL].duration, handle_timer, (int *) IMAGE_POS_DRAW);
 }
 
 void animate_font()
@@ -348,11 +328,11 @@ void animate_font()
 	timer = app_timer_register(100, &handle_timer, (int *) SHRINK_FONT01);
 }
 
-void animate_bolt(bool send)
+void animate_bolt()
 {
 	for(int x = 0; x < FRAME_COUNT - 1; x++)
 	{
-		animation_schedule(&send_animation[x].animation);
+////		animation_schedule((Animation*) bolt_animation[x].animation);
 	}
 }
 
@@ -375,11 +355,15 @@ property_animation_init_layer_frame(&explode_animation, (Layer *) &bolt.layer, &
 }
 
 //// stopped functions
-void send_animation_stopped(Animation *animation, void *data)
+void bolt_animation_stopped(Animation *animation, bool finished, void *data)
+/// void bolt_animation_stopped(Animation *animation, void *data)
 {
+/*
 	clear_bolt();
 	setup_bolt(true, true);
 	animate_explosion();
+*/
+	animate_font();
 }
 
 void explosion_animation_stopped(Animation *animation, void *data)
@@ -409,46 +393,43 @@ static void handle_timer(void *data)
 	{
 		update_marvin(cookie);
 		new_position = cookie + 1;
-		timer = app_timer_register(marvin_animation[cookie].duration, &handle_timer, (void *) new_position);
+		timer = app_timer_register(marvin_frames[cookie].duration, &handle_timer, (void *) new_position);
 		return;
 	}
 	else if(cookie == (uint32_t) IMAGE_POS_POINT) 
 	{
 		update_marvin(cookie);
 		new_position = cookie + 1;
-		timer = app_timer_register(marvin_animation[cookie].duration, &handle_timer, (void *) new_position);
+		timer = app_timer_register(marvin_frames[cookie].duration, &handle_timer, (void *) new_position);
 		return;
 	}
 	else if(cookie == (uint32_t) IMAGE_POS_AIM) 
 	{
 		update_marvin(cookie);
 		new_position = cookie + 1;
-		timer = app_timer_register(marvin_animation[cookie].duration, &handle_timer, (void *) new_position);
+		timer = app_timer_register(marvin_frames[cookie].duration, &handle_timer, (void *) new_position);
 		return;
 	}
 	else if(cookie == (uint32_t) IMAGE_POS_SHOOT) 
 	{
 		update_marvin(cookie);
 		new_position = cookie + 1;
-/*
-		clear_bolt();
-		setup_bolt(true, false);
-*/		animate_bolt(true);
-		timer = app_timer_register(marvin_animation[cookie].duration, &handle_timer, (void *) new_position);
+		animate_bolt();
+		timer = app_timer_register(marvin_frames[cookie].duration, &handle_timer, (void *) new_position);
 		return;
 	}
 	else if(cookie == (uint32_t) IMAGE_POS_LOWER) 
 	{
 		update_marvin(cookie);
 		new_position = cookie + 1;
-		timer = app_timer_register(marvin_animation[cookie].duration, &handle_timer, (void *) new_position);
+		timer = app_timer_register(marvin_frames[cookie].duration, &handle_timer, (void *) new_position);
 		return;
 	}
 	else if(cookie == (uint32_t) IMAGE_POS_DONE) 
 	{
 		update_marvin(cookie);
 		new_position = IMAGE_POS_NORMAL;
-		timer = app_timer_register(marvin_animation[cookie].duration, &handle_timer, (void *) new_position);
+		timer = app_timer_register(marvin_frames[cookie].duration, &handle_timer, (void *) new_position);
 		return;
 	}
 	else if (cookie == (uint32_t) SHRINK_FONT01) 
