@@ -559,7 +559,8 @@ void handle_init(void)
 
 void handle_deinit(void) 
 {
-////	clear_screen();
+	window_destroy(window);	
+	clear_all();
 }
 
 //// main function
