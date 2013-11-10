@@ -237,6 +237,7 @@ void setup_background()
 	earth = bitmap_layer_create(GRect(4, 4, 32, 32));
 	bitmap_layer_set_bitmap(earth, earth_image);
 	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(earth));
+//	layer_set_hidden(bitmap_layer_get_layer(earth), true);	
 
 	flag = bitmap_layer_create(GRect(75, (SCREEN_HEIGHT - 90), 40, 60));
 	bitmap_layer_set_bitmap(flag, flag_image);
