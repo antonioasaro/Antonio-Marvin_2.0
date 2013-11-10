@@ -162,6 +162,7 @@ void setup_bolt()
 	bolt = bitmap_layer_create(FRAME01);
 	bitmap_layer_set_bitmap(bolt, bolt_image);
 	bitmap_layer_set_compositing_mode(bolt, GCompOpAnd);
+	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(bolt));
 }
 
 void setup_explosion()
@@ -169,6 +170,7 @@ void setup_explosion()
 	explosion = bitmap_layer_create(LASTFRAME);
 	bitmap_layer_set_bitmap(explosion, explosion_image);
 	bitmap_layer_set_compositing_mode(explosion, GCompOpAnd);
+	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(explosion));
 }
 
 void setup_marvin()
@@ -247,7 +249,7 @@ void setup_fonts()
 
 void setup_bolt_frames()
 {
-	double duration = 20;
+	double duration = 10;
 	bolt_frames[0].frame  = FRAME01; bolt_frames[0].duration  = 25 * duration;
 	bolt_frames[1].frame  = FRAME02; bolt_frames[1].duration  = 25 * duration;
 	bolt_frames[2].frame  = FRAME03; bolt_frames[2].duration  = 25 * duration;
@@ -287,7 +289,7 @@ void setup_bolt_animation()
 void setup_explosion_animation()
 {
 	explosion_animation = property_animation_create_layer_frame(bitmap_layer_get_layer(explosion), NULL, &bolt_frames[LASTINDEX].frame);
-	animation_set_duration((Animation*) explosion_animation, 500);
+	animation_set_duration((Animation*) explosion_animation, 1000);
 	animation_set_delay((Animation*) explosion_animation, 0);
 	animation_set_curve((Animation*) explosion_animation, AnimationCurveLinear);
 	animation_set_handlers((Animation*) explosion_animation, (AnimationHandlers) {
@@ -351,23 +353,19 @@ void animate_explosion()
 //// started + stopped functions
 static void bolt_animation_started(Animation *animation, void *data)
 {
-	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(bolt));
 }
 
 static void bolt_animation_stopped(Animation *animation, bool finished, void *data)
 {
- 	layer_remove_from_parent(bitmap_layer_get_layer(bolt));
 	animate_explosion();
 }
 
 static void explosion_animation_started(Animation *animation, void *data)
 {
-	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(explosion));
 }
 
 static void explosion_animation_stopped(Animation *animation, bool finished, void *data)
 {
- 	layer_remove_from_parent(bitmap_layer_get_layer(explosion));
 	animate_font();
 }
 
