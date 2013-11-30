@@ -586,6 +586,7 @@ void handle_init(void)
 void handle_deinit(void) 
 {
 	window_destroy(window);	
+	layer_destroy(window_layer);
 	clear_all();
 }
 
