@@ -146,14 +146,25 @@ void clear_background()
 	bitmap_layer_destroy(mars);
 }
 
+void clear_animations() {
+    for (int i=0; i<FRAME_COUNT; i++) property_animation_destroy(bolt_animation[i]);
+    property_animation_destroy(explosion_animation);
+}
+
+void clear_fonts() {
+    for (int i=0; i<6; i++) fonts_unload_custom_font(fonts[i]);
+}
+
 void clear_all()
 {
+	clear_fonts();
 	clear_gbitmap();
 	clear_marvin();
 	clear_time();
 	clear_date();
 	clear_bolt();
 	clear_explosion();
+	clear_animations();
 	clear_background();
 }
 
@@ -237,7 +248,7 @@ void setup_background()
 	earth = bitmap_layer_create(GRect(4, 4, 32, 32));
 	bitmap_layer_set_bitmap(earth, earth_image);
 	layer_add_child(window_get_root_layer(window),  bitmap_layer_get_layer(earth));
-//	layer_set_hidden(bitmap_layer_get_layer(earth), true);	
+	layer_set_hidden(bitmap_layer_get_layer(earth), true);	
 
 	flag = bitmap_layer_create(GRect(75, (SCREEN_HEIGHT - 90), 40, 60));
 	bitmap_layer_set_bitmap(flag, flag_image);
