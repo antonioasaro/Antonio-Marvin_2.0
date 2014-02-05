@@ -235,7 +235,7 @@ void setup_time()
 
 void setup_date()
 {
-  	date_text = text_layer_create(GRect((IMAGE_WIDTH / 2), TIME_FRAME_Y + TIME_FRAME_HEIGHT, TIME_FRAME_WIDTH, TIME_FRAME_HEIGHT));
+  	date_text = text_layer_create(GRect((IMAGE_WIDTH / 2)-10, TIME_FRAME_Y + TIME_FRAME_HEIGHT, TIME_FRAME_WIDTH+20, TIME_FRAME_HEIGHT));
   	text_layer_set_text_color(date_text, GColorBlack);
   	text_layer_set_background_color(date_text, GColorClear);
 	text_layer_set_text_alignment(date_text, GTextAlignmentCenter);
@@ -344,6 +344,7 @@ void update_date(struct tm *t)
 {
 	static char dateText[] = "XXX 00/00"; 
     strftime(dateText, sizeof(dateText), "%a %m/%d", t);
+	if (dateText[4] == '0') { strcpy(&dateText[4], &dateText[5]); }
 	text_layer_set_text(date_text, dateText);
 }
 
